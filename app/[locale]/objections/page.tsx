@@ -1,2 +1,16 @@
-import {Page} from "../../../components/Shell";
-export default async function Objections({params}:{params:Promise<{locale:string}>}){const {locale}=await params;return <Page locale={locale} eyebrow="Corrections and objections" title="Something in the record is wrong?" lede="You can ask the registrar to review a spelling, date, identity, or procedural issue. Keep your application number and supporting documents ready."><div className="mt-10 max-w-2xl border-l-2 border-saffron bg-surface p-6"><h2 className="text-2xl">How to raise a request</h2><ol className="mt-5 space-y-4 text-sm leading-6 text-[var(--muted)]"><li><strong className="text-ink">01.</strong> Contact the office shown on your application.</li><li><strong className="text-ink">02.</strong> Describe the correction and attach the supporting record.</li><li><strong className="text-ink">03.</strong> Keep the acknowledgement number for follow-up.</li></ol></div></Page>}
+import { Page } from "../../../components/Shell";
+import { ObjectionForm } from "../../../components/ObjectionForm";
+
+export default async function ObjectionsPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  return (
+    <Page
+      locale={locale}
+      eyebrow="Service"
+      title="File an objection."
+      lede="Any person may object to a marriage being registered while its notice period is open. Your objection goes to the Marriage Officer handling the application."
+    >
+      <ObjectionForm />
+    </Page>
+  );
+}
