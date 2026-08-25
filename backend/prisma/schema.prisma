@@ -4,6 +4,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 enum ApplicationStatus {
   DRAFT
@@ -62,6 +63,7 @@ enum UserRole {
 }
 model Application {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId String @db.Uuid
   applicationNumber String @unique
   actCode ActCode
   status ApplicationStatus @default(DRAFT)
@@ -80,10 +82,12 @@ model Application {
   version Int @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id])
   parties Party[]
   witnesses Witness[]
   documents Document[]
   auditEvents AuditEvent[]
+  @@index([userId, status])
   @@index([districtCode, status])
 }
 model Party {
@@ -143,11 +147,12 @@ model Document {
   @@index([applicationId, type])
 }
 model User {
-  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id String @id @db.Uuid
   mobile String? @unique
   email String? @unique
   passwordHash String?
   role UserRole
+  applications Application[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
