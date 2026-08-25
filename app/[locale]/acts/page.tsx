@@ -1,0 +1,2 @@
+import {Page} from "../../../components/Shell"; import {ActFinder} from "../../../components/ClientFlows";
+export default async function Acts({params}:{params:Promise<{locale:string}>}){const {locale}=await params;return <Page locale={locale} eyebrow="Act finder" title="Start with the law that applies to you." lede="Search the official marriage laws and see a plain-language guide to the documents, notice, and fees connected to each one."><ActFinder/></Page>}

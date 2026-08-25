@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+enum ApplicationStatus {
+  DRAFT
+  PAYMENT_PENDING
+  SUBMITTED
+  UNDER_SCRUTINY
+  AWAITING_APPLICANT_FIX
+  NOTICE_PUBLISHED
+  OBJECTION_UNDER_ENQUIRY
+  AWAITING_REGISTRATION
+  REGISTERED
+  CERTIFICATE_ISSUED
+  CORRECTION_PENDING
+  CANCELLED
+  LAPSED
+}
+enum ActCode {
+  HMA_1955
+  SMA_13
+  SMA_16
+  ICMA_1872
+  PMDA_1936
+}
+enum PartyRole {
+  BRIDE
+  GROOM
+  WIFE
+  HUSBAND
+}
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+enum DocumentType {
+  PHOTO
+  SIGNATURE_LTI
+  AGE_PROOF
+  ADDRESS_PROOF
+  IDENTITY_PROOF
+  GUARDIAN_CONSENT
+  DIVORCE_DECREE
+  DEATH_CERTIFICATE_SPOUSE
+  PRIEST_CERTIFICATE
+  AFFIDAVIT
+  OBJECTION_EVIDENCE
+}
+enum UserRole {
+  APPLICANT
+  MARRIAGE_OFFICER
+  HINDU_REGISTRAR
+  DISTRICT_REGISTRAR
+  RGM_ADMIN
+  SUPPORT_READONLY
+  AUDITOR
+}
+model Application {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  applicationNumber String @unique
+  actCode ActCode
+  status ApplicationStatus @default(DRAFT)
+  districtCode String
+  policeStationCode String
+  receiptDate DateTime?
+  marriageDate DateTime?
+  noticeReceiptDate DateTime?
+  objectionWindowEndsAt DateTime?
+  registrationDeadlineAt DateTime?
+  scheduledFor DateTime?
+  registeredAt DateTime?
+  submittedAt DateTime?
+  cancelledReason String?
+  officerId String?
+  version Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  parties Party[]
+  witnesses Witness[]
+  documents Document[]
+  auditEvents AuditEvent[]
+  @@index([districtCode, status])
+}
+model Party {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  applicationId String @db.Uuid
+  role PartyRole
+  nameEnglish String
+  nameBengali String
+  dateOfBirth DateTime
+  ageAtApplication Int?
+  religion String?
+  nationality String?
+  maritalStatusPrior String?
+  occupation String?
+  address Json
+  contactEmail String?
+  contactMobile String?
+  application Application @relation(fields: [applicationId], references: [id])
+  documents Document[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([applicationId, role])
+}
+model Witness {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  applicationId String @db.Uuid
+  name String
+  address Json
+  idType String
+  idLastFour String?
+  idVerifiedByOfficerId String?
+  sequence Int
+  signatureAssetId String?
+  ltiAssetId String?
+  application Application @relation(fields: [applicationId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([applicationId, sequence])
+}
+model Document {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  applicationId String @db.Uuid
+  ownerPartyId String? @db.Uuid
+  type DocumentType
+  assetKey String
+  mimeType String
+  sizeBytes Int
+  sha256 String
+  status DocumentStatus @default(PENDING)
+  rejectionReason String?
+  verifiedByOfficerId String?
+  verifiedAt DateTime?
+  application Application @relation(fields: [applicationId], references: [id])
+  ownerParty Party? @relation(fields: [ownerPartyId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([applicationId, type])
+}
+model User {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mobile String? @unique
+  email String? @unique
+  passwordHash String?
+  role UserRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model AuditEvent {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entityType String
+  entityId String
+  event String
+  actorId String?
+  actorRole String?
+  actorIp String?
+  before Json?
+  after Json?
+  occurredAt DateTime @default(now())
+  applicationId String? @db.Uuid
+  application Application? @relation(fields: [applicationId], references: [id])
+  @@index([entityType, entityId])
+}
+model FeeSchedule {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  purpose String
+  actCode ActCode?
+  amount Decimal @db.Decimal(12,2)
+  effectiveFrom DateTime
+  effectiveTo DateTime?
+  gazetteReference String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

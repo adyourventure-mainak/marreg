@@ -1,0 +1,2 @@
+import {Page} from "../../../components/Shell"; import {StatusLookup} from "../../../components/ClientFlows";
+export default async function Status({params}:{params:Promise<{locale:string}>}){const {locale}=await params;return <Page locale={locale} eyebrow="Application status" title="See what happens next." lede="Enter your application details to see the current stage, last update, and whether you need to take action."><StatusLookup/></Page>}

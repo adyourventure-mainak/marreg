@@ -1,0 +1,11 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: marreg, POSTGRES_PASSWORD: marreg, POSTGRES_DB: marreg }
+    ports: ["5432:5432"]
+    volumes: ["marreg-postgres:/var/lib/postgresql/data"]
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+volumes:
+  marreg-postgres:

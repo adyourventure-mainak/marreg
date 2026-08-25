@@ -1,0 +1,2 @@
+import {Page} from "../../../components/Shell"; import {ApplicationForm} from "../../../components/ClientFlows";
+export default async function Apply({params}:{params:Promise<{locale:string}>}){const {locale}=await params;return <Page locale={locale} eyebrow="Start an application" title="Prepare your registration step by step." lede="This guided form helps you prepare the information a registrar will need. You can save your progress and return later."><ApplicationForm/></Page>}
