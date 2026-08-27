@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "../../lib/supabase/server";
 import { ACTS, partyRoles, validateEligibility, type ActCode } from "../../lib/acts";
 import type { DocumentType } from "../../lib/types";
+import { inspectDocument } from "../../lib/documents";
+import { PER_PARTY_DOCUMENTS } from "../../lib/preflight";
 
 export type ActionState = { ok: boolean; error?: string; message?: string };
 
@@ -136,7 +138,9 @@ export async function saveWitnesses(_prev: ActionState, formData: FormData): Pro
   const appId = str(formData, "application_id");
   if (!appId) return { ok: false, error: "Missing application." };
 
-  const rows = [0, 1, 2]
+  // Read up to four slots so a rule change to required_witnesses needs no edit
+  // here; the count check below is what enforces how many must be present.
+  const rows = [0, 1, 2, 3]
     .map((i) => ({
       application_id: appId,
       sequence: i + 1,
@@ -148,7 +152,28 @@ export async function saveWitnesses(_prev: ActionState, formData: FormData): Pro
     }))
     .filter((r) => r.name !== "");
 
-  if (rows.length < 2) return { ok: false, error: "At least two witnesses are required." };
+  // The count is a statutory quantity, so it comes from act_rules rather than
+  // being written here. submit_application() re-checks it — this is the
+  // friendly message, not the enforcement.
+  const { data: appRow } = await supabase
+    .from("applications").select("act_code").eq("id", appId).maybeSingle();
+  const required = appRow ? ACTS[appRow.act_code as ActCode].requiredWitnesses : 3;
+
+  if (rows.length !== required) {
+    return {
+      ok: false,
+      error: `This Act requires exactly ${required} witnesses; ${rows.length} ${
+        rows.length === 1 ? "has" : "have"
+      } been entered.`,
+    };
+  }
+
+  const incomplete = rows.filter(
+    (r) => !r.address?.trim() || !r.id_type?.trim() || !r.id_last_four?.trim(),
+  );
+  if (incomplete.length > 0) {
+    return { ok: false, error: "Every witness needs an address and a photo ID with its last four digits." };
+  }
 
   await supabase.from("witnesses").delete().eq("application_id", appId);
   const { error } = await supabase.from("witnesses").insert(rows);
@@ -159,35 +184,55 @@ export async function saveWitnesses(_prev: ActionState, formData: FormData): Pro
   redirect(`/en/apply/${appId}?step=4`);
 }
 
+/**
+ * The uploaded name is only ever a label shown back to the applicant and the
+ * officer. Strip anything path-like or non-printable before it is stored.
+ */
+function safeFileName(name: string): string {
+  const base = name.split(/[\\/]/).pop() ?? "";
+  const cleaned = base.replace(/[^\p{L}\p{N}. _-]/gu, "").trim();
+  return cleaned.slice(0, 120) || "document";
+}
+
 /** Step 4 — document upload. */
 export async function uploadDocument(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const { supabase } = await requireUser();
   const appId = str(formData, "application_id");
   const type = str(formData, "type") as DocumentType | null;
+  const ownerPartyId = str(formData, "owner_party_id");
   const file = formData.get("file");
 
   if (!appId || !type) return { ok: false, error: "Missing application or document type." };
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Choose a file to upload." };
+  // The form marks this required, but that is a client-side attribute only, and
+  // submit_application matches these documents to a party by owner_party_id.
+  if (PER_PARTY_DOCUMENTS.includes(type) && !ownerPartyId) {
+    return { ok: false, error: "Choose which applicant this document belongs to." };
+  }
   if (file.size > 5 * 1024 * 1024) return { ok: false, error: "Files must be 5 MB or smaller." };
 
-  const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
-  if (!allowed.includes(file.type)) return { ok: false, error: "Upload a JPG, PNG, WebP, or PDF file." };
+  // Everything below works from the bytes. file.type and file.name both come
+  // from the browser and can say anything at all.
+  const inspection = inspectDocument(type, new Uint8Array(await file.arrayBuffer()));
+  if (!inspection.ok) return { ok: false, error: inspection.error };
 
-  const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
-  const path = `${appId}/${type}-${crypto.randomUUID()}.${ext}`;
+  // The extension comes from the sniffed type, so a name like `../evil.html`
+  // cannot steer the storage path or the served content type.
+  const path = `${appId}/${type}-${crypto.randomUUID()}.${inspection.extension}`;
 
   const { error: upErr } = await supabase.storage
     .from("marreg-docs")
-    .upload(path, file, { contentType: file.type, upsert: false });
+    .upload(path, inspection.bytes, { contentType: inspection.mime, upsert: false });
   if (upErr) return { ok: false, error: upErr.message };
 
   const { error } = await supabase.from("documents").insert({
     application_id: appId,
     type,
+    owner_party_id: ownerPartyId || null,
     storage_path: path,
-    file_name: file.name,
-    mime_type: file.type,
-    size_bytes: file.size,
+    file_name: safeFileName(file.name),
+    mime_type: inspection.mime,
+    size_bytes: inspection.bytes.length,
   });
   if (error) return { ok: false, error: error.message };
 

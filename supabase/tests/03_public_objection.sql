@@ -63,3 +63,26 @@ reset role;
 set role authenticated;
 select set_config('request.jwt.claim.sub','22222222-2222-2222-2222-222222222222', false);
 select objector_name, status from objections;
+
+\echo '--- a signed-in applicant cannot INSERT an objection directly (regression)'
+-- Migration 400 revoked insert from `anon` but not from `authenticated`, so a
+-- signed-in user could bypass every check in file_objection(). Migration 600
+-- revokes it from `authenticated` too and drops the `with check (true)` policy.
+--
+-- The `BUG:` raise uses sqlstate 'MR001' so the `when others` handler can let
+-- it through instead of swallowing the failure it is meant to report.
+reset role;
+set role authenticated;
+select set_config('request.jwt.claim.sub','44444444-4444-4444-4444-444444444444', false);
+do $$
+declare a uuid;
+begin
+  select id into a from applications where act_code = 'HMA_1955';
+  insert into objections (application_id, objector_name, grounds)
+  values (a, 'Mallory', 'fabricated objection against a closed notice');
+  raise exception using errcode = 'MR001',
+    message = 'BUG: an authenticated user inserted an objection directly';
+exception
+  when sqlstate 'MR001' then raise;
+  when others then raise notice 'correctly denied: %', sqlerrm;
+end $$;

@@ -6,7 +6,7 @@ matters is enforced in the database rather than in the browser.
 
 ## Apply the schema
 
-Run these four files **in order**, in the Supabase SQL editor
+Run these files **in order**, in the Supabase SQL editor
 (Dashboard → SQL Editor → New query → paste → Run):
 
 | Order | File | What it does |
@@ -14,8 +14,10 @@ Run these four files **in order**, in the Supabase SQL editor
 | 1 | `migrations/20260825000100_init.sql` | enums, tables, indexes, the profile trigger |
 | 2 | `migrations/20260825000200_rls.sql` | row level security, storage bucket + policies |
 | 3 | `migrations/20260825000300_functions.sql` | submit, state machine, document review, search |
-| 4 | `seed/001_reference.sql` | the 23 West Bengal districts and the fee schedule |
-| 5 | `seed/002_offices.sql` | starter Marriage Officer directory |
+| 4 | `migrations/20260825000400_objections.sql` | public objection filing |
+| 5 | `migrations/20260825000500_extraction.sql` | document extraction queue and advisory columns |
+| 6 | `seed/001_reference.sql` | the 23 West Bengal districts and the fee schedule |
+| 7 | `seed/002_offices.sql` | starter Marriage Officer directory |
 
 Or, with the Supabase CLI linked to the project:
 
@@ -53,6 +55,30 @@ npx tsx scripts/import-offices.ts offices.csv
 - **Document files** — the private `marreg-docs` bucket. A file at
   `<application_id>/<type>-<uuid>.<ext>` is readable by the applicant who owns
   that application and by the staff of its office, and by nobody else.
+- **Document extraction** — `20260825000500_extraction.sql`. Inserting a
+  document enqueues a job; `/api/extraction` claims a batch on a cron tick,
+  reads each scan with a vision model, and writes redacted results back to the
+  `ai_*` columns. Photographs and signatures are skipped, as are formats the
+  model cannot read. Failures retry three times with a growing backoff.
+
+## Extraction cannot verify a document
+
+The `documents_verified_by_human` constraint says a document may only leave
+`PENDING` when `verified_by` is set. `review_document()` sets it; the
+extraction worker never does. So the machine is *structurally* incapable of
+marking a document VERIFIED or REJECTED — it can only annotate one, whatever
+the application code does. `supabase/tests/04_extraction_queue.sql` asserts
+this directly.
+
+The constraint is added `NOT VALID`, so rows written before it existed are left
+alone. To check whether any of them would violate it:
+
+```sql
+select id, status from documents where status <> 'PENDING' and verified_by is null;
+```
+
+Fix or accept those, then `alter table documents validate constraint
+documents_verified_by_human;` to enforce it retroactively.
 
 ## Making someone a Marriage Officer
 
@@ -67,6 +93,18 @@ update profiles set role = 'RGM_ADMIN' where email = 'you@example.com';
 
 ## Migration order
 
-`20260825000400_objections.sql` was added after the first four and must be run
-too. Running the whole `migrations/` directory in filename order is always
-correct — every file is written to be safely re-runnable.
+Running the whole `migrations/` directory in filename order is always correct —
+every file is written to be safely re-runnable.
+
+## Worker environment
+
+`/api/extraction` needs `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, and the
+`AI_*` variables from `.env.example`, set in Vercel for Production **and**
+Preview. The worker returns 401 on every request when `CRON_SECRET` is unset —
+it never runs open. The cron schedule lives in `vercel.json`.
+
+Check on it with:
+
+```sql
+select * from extraction_health;
+```

@@ -70,7 +70,13 @@ export default async function ApplicationWizardPage({
                 <StepDetails app={application} districts={(districts ?? []) as District[]} initialOffice={(office ?? null) as Office | null} />
               )}
               {current === 3 && <StepWitnesses app={application} witnesses={(witnesses ?? []) as Witness[]} />}
-              {current === 4 && <StepDocuments app={application} documents={(documents ?? []) as MarregDocument[]} />}
+              {current === 4 && (
+                <StepDocuments
+                  app={application}
+                  documents={(documents ?? []) as MarregDocument[]}
+                  parties={(parties ?? []) as Party[]}
+                />
+              )}
               {current === 5 && (
                 <StepReview
                   app={application}
@@ -78,6 +84,7 @@ export default async function ApplicationWizardPage({
                   witnesses={(witnesses ?? []) as Witness[]}
                   documents={(documents ?? []) as MarregDocument[]}
                   office={(office ?? null) as Office | null}
+                  locale={locale}
                 />
               )}
             </div>

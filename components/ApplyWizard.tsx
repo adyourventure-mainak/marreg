@@ -11,6 +11,8 @@ import { ACTS, partyRoles, type ActCode } from "../lib/acts";
 import { DOCUMENT_LABELS, type Application, type District, type MarregDocument, type Office, type Party, type Witness } from "../lib/types";
 import { Alert, Button, Field } from "./ui";
 import { formatDate } from "../lib/format";
+import { runPreflight, PER_PARTY_DOCUMENTS } from "../lib/preflight";
+import { Preflight } from "./Preflight";
 
 const initial: ActionState = { ok: false };
 const STEPS = ["Applicants", "Marriage & office", "Witnesses", "Documents", "Review"];
@@ -217,25 +219,28 @@ function OfficeSummary({ office }: { office?: Office | null }) {
 
 export function StepWitnesses({ app, witnesses }: { app: Application; witnesses: Witness[] }) {
   const [state, action, pending] = useActionState(saveWitnesses, initial);
+  const required = ACTS[app.act_code].requiredWitnesses;
 
   return (
     <form action={action} className="space-y-6">
       <input type="hidden" name="application_id" value={app.id} />
       <p className="text-sm leading-6 text-[var(--muted)]">
-        Two witnesses are required; a third is optional. Witnesses must attend the registration in person with the identity document listed here.
+        {required} witnesses are required under {ACTS[app.act_code].shortLabel}, and all {required} must
+        be complete before you can submit. Each witness must attend the registration in person, bringing
+        the original of the identity document entered here — it must carry their photograph and address.
       </p>
 
-      {[0, 1, 2].map((i) => {
+      {Array.from({ length: required }, (_, i) => i).map((i) => {
         const w = witnesses.find((x) => x.sequence === i + 1);
         return (
           <fieldset key={i} className="border border-rule bg-paper p-5">
             <legend className="px-2 font-display text-2xl">
-              Witness {i + 1} {i === 2 && <span className="text-base text-[var(--muted)]">(optional)</span>}
+              Witness {i + 1}
             </legend>
             <div className="mt-4 grid gap-5 md:grid-cols-2">
-              <Field label="Full name" name={`w${i}_name`} required={i < 2} defaultValue={w?.name} />
+              <Field label="Full name" name={`w${i}_name`} required defaultValue={w?.name} />
               <Field label="Mobile number" name={`w${i}_mobile`} type="tel" defaultValue={w?.mobile} />
-              <Field label="Address" name={`w${i}_address`} defaultValue={w?.address} className="md:col-span-2" />
+              <Field label="Address" name={`w${i}_address`} required defaultValue={w?.address} className="md:col-span-2" />
               <Field label="Identity document">
                 <select name={`w${i}_id_type`} defaultValue={w?.id_type ?? "Aadhaar"} className="focus mt-2 min-h-12 w-full border border-rule bg-surface px-3 text-base font-normal">
                   <option>Aadhaar</option>
@@ -245,7 +250,7 @@ export function StepWitnesses({ app, witnesses }: { app: Application; witnesses:
                   <option>Driving Licence</option>
                 </select>
               </Field>
-              <Field label="Last four digits of that document" name={`w${i}_id_last4`} defaultValue={w?.id_last_four} hint="We never store the full number." />
+              <Field label="Last four digits of that document" name={`w${i}_id_last4`} required defaultValue={w?.id_last_four} hint="We never store the full number." />
             </div>
           </fieldset>
         );
@@ -261,9 +266,15 @@ export function StepWitnesses({ app, witnesses }: { app: Application; witnesses:
 
 /* ------------------------------------------------------------------ step 4 */
 
-export function StepDocuments({ app, documents }: { app: Application; documents: MarregDocument[] }) {
+export function StepDocuments({
+  app, documents, parties,
+}: {
+  app: Application; documents: MarregDocument[]; parties: Party[];
+}) {
   const [state, action, pending] = useActionState(uploadDocument, initial);
+  const [docType, setDocType] = useState<string>(Object.keys(DOCUMENT_LABELS)[0]);
   const required = ACTS[app.act_code].documents;
+  const needsParty = PER_PARTY_DOCUMENTS.includes(docType as MarregDocument["type"]);
 
   return (
     <div className="space-y-8">
@@ -274,21 +285,43 @@ export function StepDocuments({ app, documents }: { app: Application; documents:
         </ul>
       </div>
 
-      <form action={action} className="grid gap-5 border border-rule bg-paper p-5 md:grid-cols-[1fr_1fr_auto] md:items-end">
+      <form
+        action={action}
+        className={`grid gap-5 border border-rule bg-paper p-5 md:items-end ${
+          needsParty ? "md:grid-cols-[1fr_1fr_1fr_auto]" : "md:grid-cols-[1fr_1fr_auto]"
+        }`}
+      >
         <input type="hidden" name="application_id" value={app.id} />
         <Field label="Document type" required>
-          <select name="type" required className="focus mt-2 min-h-12 w-full border border-rule bg-surface px-3 text-base font-normal">
+          <select
+            name="type"
+            required
+            value={docType}
+            onChange={(e) => setDocType(e.target.value)}
+            className="focus mt-2 min-h-12 w-full border border-rule bg-surface px-3 text-base font-normal"
+          >
             {Object.entries(DOCUMENT_LABELS).map(([value, label]) => (
               <option key={value} value={value}>{label}</option>
             ))}
           </select>
         </Field>
+        {needsParty && (
+          <Field label="Belongs to" required hint="This document is needed for each applicant separately.">
+            <select name="owner_party_id" required className="focus mt-2 min-h-12 w-full border border-rule bg-surface px-3 text-base font-normal">
+              {parties.map((p) => (
+                <option key={p.id} value={p.id}>{p.name_english || p.role.toLowerCase()}</option>
+              ))}
+            </select>
+          </Field>
+        )}
         <Field label="File" required hint="JPG, PNG, WebP, or PDF · up to 5 MB">
           <input name="file" type="file" required accept="image/jpeg,image/png,image/webp,application/pdf" className="focus mt-2 min-h-12 w-full border border-rule bg-surface px-3 py-2 text-sm font-normal" />
         </Field>
         <Button disabled={pending}>{pending ? "Uploading…" : "Upload"}</Button>
-        {state.error && <div className="md:col-span-3"><Alert>{state.error}</Alert></div>}
-        {state.ok && state.message && <div className="md:col-span-3"><Alert tone="success">{state.message}</Alert></div>}
+        {state.error && <div className={needsParty ? "md:col-span-4" : "md:col-span-3"}><Alert>{state.error}</Alert></div>}
+        {state.ok && state.message && (
+          <div className={needsParty ? "md:col-span-4" : "md:col-span-3"}><Alert tone="success">{state.message}</Alert></div>
+        )}
       </form>
 
       <div>
@@ -300,7 +333,14 @@ export function StepDocuments({ app, documents }: { app: Application; documents:
             {documents.map((d) => (
               <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
                 <div>
-                  <p className="text-sm font-bold">{DOCUMENT_LABELS[d.type]}</p>
+                  <p className="text-sm font-bold">
+                    {DOCUMENT_LABELS[d.type]}
+                    {d.owner_party_id && (
+                      <span className="ml-2 text-xs font-normal text-[var(--muted)]">
+                        — {parties.find((p) => p.id === d.owner_party_id)?.name_english ?? "applicant"}
+                      </span>
+                    )}
+                  </p>
                   <p className="text-xs text-[var(--muted)]">
                     {d.file_name} · {Math.round((d.size_bytes ?? 0) / 1024)} KB · uploaded {formatDate(d.created_at)}
                   </p>
@@ -336,15 +376,19 @@ export function StepDocuments({ app, documents }: { app: Application; documents:
 /* ------------------------------------------------------------------ step 5 */
 
 export function StepReview({
-  app, parties, witnesses, documents, office,
+  app, parties, witnesses, documents, office, locale = "en",
 }: {
-  app: Application; parties: Party[]; witnesses: Witness[]; documents: MarregDocument[]; office: Office | null;
+  app: Application; parties: Party[]; witnesses: Witness[]; documents: MarregDocument[];
+  office: Office | null; locale?: string;
 }) {
   const [state, action, pending] = useActionState(submitApplication, initial);
   const rule = ACTS[app.act_code];
+  const report = runPreflight({ application: app, parties, witnesses, documents, office });
 
   return (
     <div className="space-y-6">
+      <Preflight report={report} appId={app.id} locale={locale} actLabel={rule.shortLabel} />
+
       <section className="border border-rule bg-surface p-6">
         <h2 className="font-display text-2xl">{rule.label}</h2>
         <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2">
@@ -403,6 +447,13 @@ export function StepReview({
           <input type="checkbox" required className="focus mt-1 h-5 w-5" />
           I agree to the declaration above.
         </label>
+        {report.counts.critical > 0 && (
+          <label className="mt-3 flex items-start gap-3 text-sm font-bold">
+            <input type="checkbox" required className="focus mt-1 h-5 w-5" />
+            I have read the {report.counts.critical} item{report.counts.critical === 1 ? "" : "s"} above
+            and want to submit anyway.
+          </label>
+        )}
         {state.error && <Alert>{state.error}</Alert>}
         <div className="mt-6">
           <Button disabled={pending}>{pending ? "Submitting…" : "Submit application"}</Button>

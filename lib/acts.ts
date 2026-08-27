@@ -12,13 +12,32 @@ export type ActRule = {
   deadlineMonths: number;
   /** minimum days that must pass after the marriage before applying */
   minimumDaysAfterMarriage?: number;
+  /** age below which this Act requires guardian consent */
+  minimumAge: number;
+  /** witnesses required before the application may be submitted */
+  requiredWitnesses: number;
   summary: string;
   documents: string[];
 };
 
+/**
+ * The statutory periods below MIRROR the `act_rules` table in
+ * supabase/migrations/20260825000700_act_rules.sql. That table is the single
+ * source of truth: it is what submit_application() reads when it stamps the
+ * objection window and registration deadline onto a real application.
+ *
+ * These copies exist so pages can render a period without a round trip, and
+ * so the wizard can warn a client-side. They are display data. If they ever
+ * disagree with the table, the table wins and this file is wrong.
+ *
+ * acts.drift.test.ts parses the seed in that migration and fails if the two
+ * diverge, so an amendment cannot be applied to only one of them.
+ */
 export const ACTS: Record<ActCode, ActRule> = {
   HMA_1955: {
     code: "HMA_1955",
+    requiredWitnesses: 3,
+    minimumAge: 18,
     label: "The Hindu Marriage Act, 1955",
     shortLabel: "Hindu Marriage Act",
     alreadySolemnised: true,
@@ -30,6 +49,8 @@ export const ACTS: Record<ActCode, ActRule> = {
   },
   SMA_13: {
     code: "SMA_13",
+    requiredWitnesses: 3,
+    minimumAge: 18,
     label: "The Special Marriage Act, 1954 — Section 13",
     shortLabel: "Special Marriage Act s.13",
     alreadySolemnised: false,
@@ -42,6 +63,8 @@ export const ACTS: Record<ActCode, ActRule> = {
   },
   SMA_16: {
     code: "SMA_16",
+    requiredWitnesses: 3,
+    minimumAge: 18,
     label: "The Special Marriage Act, 1954 — Section 16",
     shortLabel: "Special Marriage Act s.16",
     alreadySolemnised: true,
@@ -54,6 +77,8 @@ export const ACTS: Record<ActCode, ActRule> = {
   },
   ICMA_1872: {
     code: "ICMA_1872",
+    requiredWitnesses: 3,
+    minimumAge: 21,
     label: "The Indian Christian Marriage Act, 1872",
     shortLabel: "Indian Christian Marriage Act",
     alreadySolemnised: false,
@@ -66,6 +91,8 @@ export const ACTS: Record<ActCode, ActRule> = {
   },
   PMDA_1936: {
     code: "PMDA_1936",
+    requiredWitnesses: 3,
+    minimumAge: 18,
     label: "The Parsi Marriage and Divorce Act, 1936",
     shortLabel: "Parsi Marriage & Divorce Act",
     alreadySolemnised: true,
@@ -120,7 +147,7 @@ export function validateEligibility(input: {
   };
 
   const reference = input.marriageDate ? new Date(input.marriageDate) : today;
-  const minAge = input.act === "ICMA_1872" ? 21 : 18;
+  const minAge = rule.minimumAge;
 
   for (const [label, dob] of [["Applicant 1", input.dobA], ["Applicant 2", input.dobB]] as const) {
     if (!dob) continue;

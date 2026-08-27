@@ -123,9 +123,23 @@ export type Witness = {
 
 export type MarregDocument = {
   id: string; application_id: string; type: DocumentType; storage_path: string;
+  owner_party_id: string | null;
   file_name: string | null; mime_type: string | null; size_bytes: number | null;
   status: DocumentStatus; rejection_reason: string | null; created_at: string;
+  /**
+   * Advisory extraction columns, written only by the /api/extraction worker.
+   * Never a verification decision — see the documents_verified_by_human
+   * constraint in supabase/migrations/20260825000500_extraction.sql.
+   */
+  ai_status: ExtractionStatus | null;
+  ai_extracted: unknown;
+  ai_findings: unknown;
+  ai_legibility: number | null;
+  ai_checked_at: string | null;
+  ai_model: string | null;
 };
+
+export type ExtractionStatus = "QUEUED" | "RUNNING" | "DONE" | "FAILED" | "SKIPPED";
 
 export type Application = {
   id: string;

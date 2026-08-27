@@ -5,5 +5,8 @@
   "installCommand": "npm install",
   "outputDirectory": ".next",
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "crons": [
+    { "path": "/api/extraction?limit=5", "schedule": "*/5 * * * *" }
+  ]
 }

@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Header, Footer } from "../../../../components/Shell";
 import { Card, StatusBadge } from "../../../../components/ui";
 import { OfficerActions } from "../../../../components/OfficerActions";
+import { DocumentExtraction } from "../../../../components/DocumentExtraction";
 import { reviewDocument } from "../../../actions/officer";
 import { createClient, getProfile } from "../../../../lib/supabase/server";
 import { ACTS } from "../../../../lib/acts";
@@ -37,6 +38,8 @@ export default async function OfficerFilePage({ params }: { params: Promise<{ lo
     ]);
 
   const docs = (documents ?? []) as MarregDocument[];
+  const people = (parties ?? []) as Party[];
+  const partyOf = (d: MarregDocument) => people.find((p) => p.id === d.owner_party_id) ?? null;
   const signed = await Promise.all(
     docs.map(async (d) => {
       const { data: url } = await supabase.storage.from("marreg-docs").createSignedUrl(d.storage_path, 600);
@@ -83,7 +86,14 @@ export default async function OfficerFilePage({ params }: { params: Promise<{ lo
                   <li key={doc.id} className="border border-rule bg-paper p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <p className="text-sm font-bold">{DOCUMENT_LABELS[doc.type]}</p>
+                        <p className="text-sm font-bold">
+                          {DOCUMENT_LABELS[doc.type]}
+                          {partyOf(doc) && (
+                            <span className="ml-2 text-xs font-normal text-[var(--muted)]">
+                              — {partyOf(doc)?.name_english}
+                            </span>
+                          )}
+                        </p>
                         <p className="text-xs text-[var(--muted)]">{doc.file_name} · uploaded {formatDate(doc.created_at)}</p>
                       </div>
                       {url && (
@@ -114,6 +124,8 @@ export default async function OfficerFilePage({ params }: { params: Promise<{ lo
                       </form>
                     </div>
                     {doc.rejection_reason && <p className="mt-2 text-xs text-[#8a2b2b]">Reason: {doc.rejection_reason}</p>}
+
+                    <DocumentExtraction doc={doc} party={partyOf(doc)} />
                   </li>
                 ))}
                 {docs.length === 0 && <li className="text-sm text-[var(--muted)]">No documents uploaded.</li>}
