@@ -1,5 +1,5 @@
 import { Page } from "../../../components/Shell";
-import { SignInForm } from "../../../components/AuthForms";
+import { SignInForm, EmailOtpForm } from "../../../components/AuthForms";
 
 export default async function LoginPage({
   params, searchParams,
@@ -18,6 +18,7 @@ export default async function LoginPage({
       lede="Your account keeps your draft applications, uploaded documents, and status updates in one place."
     >
       <SignInForm next={next ?? `/${locale}/account`} notice={error} />
+      <EmailOtpForm next={next ?? `/${locale}/account`} />
     </Page>
   );
 }

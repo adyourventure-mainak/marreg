@@ -34,10 +34,15 @@ export function Alert({ tone = "error", children }: { tone?: "error" | "success"
 
 export function Field({
   label, name, type = "text", required, defaultValue, placeholder, hint, children, className = "",
+  inputMode, autoComplete, maxLength,
 }: {
   label: string; name?: string; type?: string; required?: boolean;
   defaultValue?: string | number | null; placeholder?: string; hint?: string;
   children?: ReactNode; className?: string;
+  /** Passed through for one-time codes: numeric keypad and OS autofill. */
+  inputMode?: "numeric" | "tel" | "email" | "text";
+  autoComplete?: string;
+  maxLength?: number;
 }) {
   return (
     <label className={`block text-sm font-bold ${className}`}>
@@ -50,6 +55,9 @@ export function Field({
           required={required}
           defaultValue={defaultValue ?? undefined}
           placeholder={placeholder}
+          inputMode={inputMode}
+          autoComplete={autoComplete}
+          maxLength={maxLength}
           className="focus mt-2 min-h-12 w-full border border-rule bg-paper px-3 text-base font-normal"
         />
       )}

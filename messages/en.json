@@ -1,0 +1,82 @@
+{
+  "Header": {
+    "government": "Government of West Bengal · Law Department",
+    "switchTo": "বাংলা",
+    "organisation": "Registrar General of Marriages",
+    "acts": "Acts & rules",
+    "offices": "Marriage Officers",
+    "status": "Track application",
+    "help": "Public information",
+    "officerDesk": "Officer desk",
+    "myApplications": "My applications",
+    "signOut": "Sign out",
+    "signIn": "Sign in",
+    "applyOnline": "Apply online",
+    "directoryReview": "Directory review"
+  },
+  "Footer": {
+    "blurb": "Online marriage registration services of the Office of the Registrar General of Marriages, Government of West Bengal.",
+    "supportLabel": "Citizen support",
+    "supportHeading": "Contact the RGM office",
+    "copyright": "© Government of West Bengal · NIC"
+  },
+  "Home": {
+    "eyebrow": "Office of the Registrar General of Marriages",
+    "title": "Marriage registration, made clearer.",
+    "lede": "The modern citizen gateway for West Bengal’s marriage registration services. Choose the Act, understand the process, and reach the right Marriage Officer.",
+    "finderLabel": "Which service do you need?",
+    "finderPlaceholder": "Choose a Marriage Act",
+    "finderSubmit": "View requirements",
+    "finderNote": "Official guidance, timelines, and required documents.",
+    "badge": "West Bengal MARREG",
+    "ledgerEyebrow": "A public record with purpose",
+    "ledgerHeading": "We register marriages. We add value to marriages.",
+    "ledgerBody": "A secure digital record supports citizens through legal separation, citizenship, inheritance, and other legal and social matters.",
+    "ledgerCaption": "Registrar’s record",
+    "actions": {
+      "acts": {
+        "title": "Find your requirements",
+        "body": "Answer a few questions to see the documents, fees, and legal steps that apply to you.",
+        "label": "Open Act finder"
+      },
+      "status": {
+        "title": "Check an application",
+        "body": "See where your registration stands using your application number and date of birth.",
+        "label": "Check status"
+      },
+      "offices": {
+        "title": "Find a registration office",
+        "body": "Locate the registrar responsible for your district, sub-division, or police station area.",
+        "label": "Find an office"
+      }
+    },
+    "trustEyebrow": "Built on the record",
+    "trustHeading": "Know what you can trust.",
+    "trustBody": "Every requirement links back to an official act, notice, or service source. We show when it was last checked so you can make decisions with the full context.",
+    "trustPointTitle": "Source-first guidance.",
+    "trustPointBody": "Plain-language summaries never replace the law. They help you reach it.",
+    "tiles": {
+      "service": "Service",
+      "directory": "Directory",
+      "publicInformation": "Public information",
+      "applyTitle": "Apply online",
+      "applyBody": "Start or resume an application.",
+      "statusTitle": "Track status",
+      "statusBody": "View application updates.",
+      "officesTitle": "Online MO",
+      "officesBody": "Find Marriage Officers and offices.",
+      "helpTitle": "Notices & help",
+      "helpBody": "FAQs, circulars, fees, and guidance."
+    }
+  },
+  "Status": {
+    "eyebrow": "Track",
+    "title": "Check where your application stands.",
+    "lede": "Enter your application number and the date of birth of either applicant. You do not need to sign in."
+  },
+  "Fees": {
+    "eyebrow": "Fees and payments",
+    "title": "Know the cost before you apply.",
+    "lede": "Fees depend on the Act you apply under. Confirm the current figure with your Marriage Officer before paying."
+  }
+}

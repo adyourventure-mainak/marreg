@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { Page } from "../../../components/Shell";
 import { createClient } from "../../../lib/supabase/server";
 import { ACTS, type ActCode } from "../../../lib/acts";
@@ -8,6 +9,7 @@ type Fee = { id: string; purpose: string; act_code: ActCode | null; amount: numb
 
 export default async function FeesPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
+  const t = await getTranslations("Fees");
   const supabase = await createClient();
   const { data } = await supabase.from("fee_schedule").select("*").is("effective_to", null).order("purpose");
   const fees = (data ?? []) as Fee[];
@@ -15,9 +17,9 @@ export default async function FeesPage({ params }: { params: Promise<{ locale: s
   return (
     <Page
       locale={locale}
-      eyebrow="Fees and payments"
-      title="Know the cost before you apply."
-      lede="Fees depend on the Act you apply under. Confirm the current figure with your Marriage Officer before paying."
+      eyebrow={t("eyebrow")}
+      title={t("title")}
+      lede={t("lede")}
     >
       <div className="mt-10 max-w-3xl overflow-x-auto border border-rule bg-surface">
         <table className="w-full text-sm">

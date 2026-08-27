@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { getTranslations } from "next-intl/server";
 import { getProfile } from "../lib/supabase/server";
 import { signOut } from "../app/actions/auth";
 import type { Profile } from "../lib/types";
@@ -7,6 +8,7 @@ import type { Profile } from "../lib/types";
 const STAFF_ROLES = ["MARRIAGE_OFFICER", "HINDU_REGISTRAR", "DISTRICT_REGISTRAR", "RGM_ADMIN", "SUPPORT_READONLY", "AUDITOR"];
 
 export async function Header({ locale = "en" }: { locale?: string }) {
+  const t = await getTranslations("Header");
   const profile = (await getProfile()) as Profile | null;
   const isStaff = profile ? STAFF_ROLES.includes(profile.role) : false;
 
@@ -14,9 +16,9 @@ export async function Header({ locale = "en" }: { locale?: string }) {
     <>
       <div className="bg-marreg-pink text-xs font-bold uppercase tracking-[.12em] text-white">
         <div className="page flex justify-between py-2">
-          <span>Government of West Bengal · Law Department</span>
+          <span>{t("government")}</span>
           <Link className="focus" href={locale === "bn" ? "/en" : "/bn"}>
-            {locale === "bn" ? "English" : "বাংলা"}
+            {t("switchTo")}
           </Link>
         </div>
       </div>
@@ -28,34 +30,35 @@ export async function Header({ locale = "en" }: { locale?: string }) {
             <span>
               <span className="block font-display text-2xl font-bold">MARREG</span>
               <span className="hidden text-[10px] font-bold uppercase tracking-widest text-[var(--muted)] sm:block">
-                Registrar General of Marriages
+                {t("organisation")}
               </span>
             </span>
           </Link>
 
           <div className="hidden items-center gap-6 text-sm font-semibold lg:flex">
-            <Link className="focus hover:text-teal" href={`/${locale}/acts`}>Acts &amp; rules</Link>
-            <Link className="focus hover:text-teal" href={`/${locale}/offices`}>Marriage Officers</Link>
-            <Link className="focus hover:text-teal" href={`/${locale}/status`}>Track application</Link>
-            <Link className="focus hover:text-teal" href={`/${locale}/help`}>Public information</Link>
-            {isStaff && <Link className="focus text-teal hover:underline" href={`/${locale}/officer`}>Officer desk</Link>}
+            <Link className="focus hover:text-teal" href={`/${locale}/acts`}>{t("acts")}</Link>
+            <Link className="focus hover:text-teal" href={`/${locale}/offices`}>{t("offices")}</Link>
+            <Link className="focus hover:text-teal" href={`/${locale}/status`}>{t("status")}</Link>
+            <Link className="focus hover:text-teal" href={`/${locale}/help`}>{t("help")}</Link>
+            {isStaff && <Link className="focus text-teal hover:underline" href={`/${locale}/officer`}>{t("officerDesk")}</Link>}
+            {isStaff && <Link className="focus text-teal hover:underline" href={`/${locale}/directory`}>{t("directoryReview")}</Link>}
           </div>
 
           <div className="flex shrink-0 items-center gap-3">
             {profile ? (
               <>
                 <Link href={`/${locale}/account`} className="focus hidden text-sm font-bold text-teal sm:block">
-                  My applications
+                  {t("myApplications")}
                 </Link>
                 <form action={signOut}>
-                  <button className="focus border border-rule px-4 py-2 text-sm font-bold text-[var(--muted)]">Sign out</button>
+                  <button className="focus border border-rule px-4 py-2 text-sm font-bold text-[var(--muted)]">{t("signOut")}</button>
                 </form>
               </>
             ) : (
               <>
-                <Link href={`/${locale}/login`} className="focus hidden text-sm font-bold text-teal sm:block">Sign in</Link>
+                <Link href={`/${locale}/login`} className="focus hidden text-sm font-bold text-teal sm:block">{t("signIn")}</Link>
                 <Link href={`/${locale}/apply`} className="focus border border-[var(--marreg-pink)] px-4 py-2 text-sm font-bold text-[var(--marreg-pink)]">
-                  Apply online
+                  {t("applyOnline")}
                 </Link>
               </>
             )}
@@ -66,21 +69,22 @@ export async function Header({ locale = "en" }: { locale?: string }) {
   );
 }
 
-export function Footer() {
+export async function Footer() {
+  const t = await getTranslations("Footer");
   return (
     <footer className="mt-20 bg-marreg-pink py-12 text-white">
       <div className="page grid gap-8 md:grid-cols-[2fr_1fr_1fr]">
         <div>
           <div className="font-display text-2xl">MARREG</div>
           <p className="mt-3 max-w-sm text-sm leading-6 text-white/80">
-            Online marriage registration services of the Office of the Registrar General of Marriages, Government of West Bengal.
+            {t("blurb")}
           </p>
         </div>
         <div>
-          <div className="text-xs font-bold uppercase tracking-widest text-white/80">Citizen support</div>
-          <div className="mt-2 font-display text-2xl">Contact the RGM office</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-white/80">{t("supportLabel")}</div>
+          <div className="mt-2 font-display text-2xl">{t("supportHeading")}</div>
         </div>
-        <div className="text-xs uppercase tracking-widest text-white/70">© Government of West Bengal · NIC</div>
+        <div className="text-xs uppercase tracking-widest text-white/70">{t("copyright")}</div>
       </div>
     </footer>
   );
