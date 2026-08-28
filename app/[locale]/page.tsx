@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Header, Footer } from "../../components/Shell";
+import { CitizenAssistant } from "../../components/CitizenAssistant";
 import { ACTS, ACT_CODES } from "../../lib/acts";
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
@@ -62,6 +63,20 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           <div className="absolute bottom-4 right-10 text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">
             RGM · West Bengal
           </div>
+        </div>
+      </section>
+
+      <section id="ask-assistant" className="border-y border-rule bg-paper">
+        <div className="page py-16 md:py-20">
+          <div className="max-w-2xl">
+            <p className="text-xs font-bold uppercase tracking-[.18em] text-teal">Ask the registry assistant</p>
+            <h2 className="mt-4 text-4xl leading-tight md:text-5xl">Get an answer before you make the trip.</h2>
+            <p className="mt-5 text-lg leading-8 text-[var(--muted)]">
+              Ask about documents, timelines, witnesses, or your nearest marriage office. Answers are grounded
+              in the marriage Acts and verified office directory, with sources shown below each answer.
+            </p>
+          </div>
+          <CitizenAssistant locale={locale} />
         </div>
       </section>
 
