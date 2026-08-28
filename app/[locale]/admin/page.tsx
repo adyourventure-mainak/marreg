@@ -40,7 +40,7 @@ export default async function AdminOverviewPage({ params }: { params: Promise<{ 
   const supabase = await createClient();
   const count = (q: { count: number | null }) => q.count ?? 0;
 
-  const [pendingOffices, verifiedOffices, openApplications, awaitingFix, openObjections, invitations, recent] =
+  const [pendingOffices, verifiedOffices, openApplications, awaitingFix, openObjections, invitations, pendingSources, recent] =
     await Promise.all([
       supabase.from("offices").select("id", { count: "exact", head: true }).eq("verification_status", "PENDING_REVIEW"),
       supabase.from("offices").select("id", { count: "exact", head: true }).eq("verification_status", "VERIFIED"),
@@ -50,6 +50,8 @@ export default async function AdminOverviewPage({ params }: { params: Promise<{ 
       supabase.from("objections").select("id", { count: "exact", head: true }).in("status", ["FILED", "UNDER_ENQUIRY"]),
       supabase.from("staff_invitations").select("email", { count: "exact", head: true })
         .is("consumed_at", null).is("revoked_at", null),
+      supabase.from("knowledge_sources").select("id", { count: "exact", head: true })
+        .eq("verification_status", "PENDING_REVIEW"),
       supabase.from("audit_events").select("event, entity_type, entity_id, occurred_at, actor_role")
         .order("occurred_at", { ascending: false }).limit(8),
     ]);
@@ -92,6 +94,10 @@ export default async function AdminOverviewPage({ params }: { params: Promise<{ 
         <Tile
           label="Logins authorised, unused" value={count(invitations)}
           hint="Awaiting the officer's first sign-in" href={`/${locale}/admin/staff`}
+        />
+        <Tile
+          label="Source documents to check" value={count(pendingSources)}
+          hint="The assistant cannot quote them until verified" href={`/${locale}/admin/knowledge`}
         />
       </div>
 

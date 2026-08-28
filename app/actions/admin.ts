@@ -59,3 +59,27 @@ export async function revokeStaffInvitation(formData: FormData): Promise<void> {
 
   revalidatePath("/en/admin");
 }
+
+/**
+ * Verify or reject an extracted source document.
+ *
+ * The gate between a mechanical PDF extraction and something the citizen
+ * assistant is allowed to quote. review_knowledge_source() checks is_staff()
+ * and writes the audit entry, so this action only has to carry the form.
+ */
+export async function reviewKnowledgeSource(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const sourceId = str(formData, "source_id");
+  const status = str(formData, "status");
+  if (!sourceId || !status) return;
+
+  const { error } = await supabase.rpc("review_knowledge_source", {
+    p_source: sourceId,
+    p_status: status,
+    p_note: str(formData, "note"),
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/en/admin/knowledge");
+  revalidatePath("/bn/admin/knowledge");
+}

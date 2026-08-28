@@ -9,6 +9,7 @@ const SECTIONS = [
   { key: "staff",        href: "/staff",        label: "Staff & roles" },
   { key: "applications", href: "/applications", label: "Applications" },
   { key: "objections",   href: "/objections",   label: "Objections" },
+  { key: "knowledge",    href: "/knowledge",    label: "Source documents" },
   { key: "audit",        href: "/audit",        label: "Audit trail" },
 ] as const;
 
