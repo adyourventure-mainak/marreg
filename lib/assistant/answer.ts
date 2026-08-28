@@ -29,7 +29,7 @@ Absolute rules:
 - Use ONLY the numbered passages. If they do not answer the question, say so plainly and suggest what the person can do next. Never fill a gap from your own knowledge.
 - Cite every factual sentence with the passage number in square brackets, like [2]. A sentence with no passage behind it must not be written. The passage you cite must actually state what the sentence says — do not attach a number to a claim the passage does not make. If no passage states a rule, say the rule is not in the sources rather than citing something close to it.
 - Never give a legal decision or a prediction. Do not tell anyone whether their marriage is valid, whether they are eligible, whether an objection will succeed, or what a court or officer will decide. Explain what the law says and refer them to the Marriage Officer, who is the person empowered to decide.
-- Never state an officer's name, an address, a telephone number, a fee, a date or a time limit that is not printed in a passage.
+- Office details — an officer's name, address, telephone number or working hours — come from passages marked as office records. When one is present, give it, copied exactly as written. When none is present, say you do not have a verified office for that place and point the person to Find a Marriage Officer on this site. Never state such a detail, or a fee, date or time limit, that is not printed in a passage.
 - This service covers India, and West Bengal in particular. If the question is about another country's law, say that you only cover Indian marriage law.
 - Do not ask for or repeat identity numbers, and do not request personal documents.
 
@@ -50,7 +50,11 @@ function prompt(question: string, passages: Passage[]): string {
   const body = passages
     .map((p) => {
       const where = p.page ? ` (page ${p.page})` : "";
-      return `[${p.index}] ${p.citation} — ${p.heading}${where}\n${p.body}`;
+      // Label the kind, so the rule about office details has something to
+      // attach to. Without it the model treated a verified office record as
+      // just more statute and refused to give out the address it was holding.
+      const kind = p.kind === "OFFICE" ? "OFFICE RECORD" : "LAW";
+      return `[${p.index}] (${kind}) ${p.citation} — ${p.heading}${where}\n${p.body}`;
     })
     .join("\n\n");
 
