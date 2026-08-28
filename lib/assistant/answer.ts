@@ -1,4 +1,4 @@
-import { AI_BASE_URL, AI_MODEL, aiConfigured } from "../extraction/provider";
+import { AI_BASE_URL, AI_ASSISTANT_MODEL, aiConfigured } from "../extraction/provider";
 import type { AssistantAnswer, Passage } from "./types";
 
 /**
@@ -170,7 +170,7 @@ export async function compose(
     return { answered: false, text: "", passages, refusal: NO_DECISION };
   }
 
-  return { answered: true, text: restoreVerbatim(text, passages), passages, model: AI_MODEL };
+  return { answered: true, text: restoreVerbatim(text, passages), passages, model: AI_ASSISTANT_MODEL };
 }
 
 /**
@@ -190,7 +190,7 @@ export const liveProvider: ComposeDeps = {
         authorization: `Bearer ${AI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: AI_MODEL,
+        model: AI_ASSISTANT_MODEL,
         temperature: 0,
         max_tokens: 500,
         messages: [

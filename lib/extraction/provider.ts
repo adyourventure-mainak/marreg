@@ -15,6 +15,8 @@ import type { DocumentType } from "../types";
 
 export const AI_BASE_URL = process.env.AI_BASE_URL ?? "https://api.openai.com/v1";
 export const AI_MODEL = process.env.AI_MODEL ?? "gpt-4o-mini";
+export const AI_EXTRACTION_MODEL = process.env.AI_EXTRACTION_MODEL ?? AI_MODEL;
+export const AI_ASSISTANT_MODEL = process.env.AI_ASSISTANT_MODEL ?? "gpt-5.6-luna";
 const AI_API_KEY = process.env.AI_API_KEY ?? "";
 
 export const aiConfigured = Boolean(AI_API_KEY);
@@ -83,7 +85,7 @@ export async function extractWithModel(input: ExtractInput): Promise<Extracted> 
       authorization: `Bearer ${AI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: AI_MODEL,
+      model: AI_EXTRACTION_MODEL,
       response_format: RESPONSE_FORMAT,
       messages: [
         { role: "system", content: SYSTEM },
