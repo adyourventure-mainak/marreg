@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActCode } from "../acts";
 import type { Passage } from "./types";
+import { searchOfficialSources } from "./online";
 
 /**
  * Everything the assistant is allowed to know.
@@ -131,6 +132,8 @@ export async function retrieve(
       href: `/${locale}/acts`,
     });
   }
+
+  if (passages.length === 0) passages.push(...await searchOfficialSources(question, locale));
 
   if (asksAboutOffice(question)) {
     const { data: districts } = await supabase.from("districts").select("code, name, name_bn");

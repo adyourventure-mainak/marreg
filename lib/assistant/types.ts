@@ -4,7 +4,7 @@ import type { ActCode } from "../acts";
 export type Passage = {
   /** 1-based index as shown to the model and to the citizen. */
   index: number;
-  kind: "ACT" | "OFFICE";
+  kind: "ACT" | "OFFICE" | "ONLINE";
   /** How this passage must be attributed, e.g. "The Hindu Marriage Act, 1955". */
   citation: string;
   /** The section or record label, e.g. "Section 8. Registration of Hindu marriages". */
