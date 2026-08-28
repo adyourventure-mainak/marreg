@@ -7,6 +7,9 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "crons": [
-    { "path": "/api/extraction?limit=5", "schedule": "*/5 * * * *" }
+    {
+      "path": "/api/extraction?limit=5",
+      "schedule": "0 3 * * *"
+    }
   ]
 }
