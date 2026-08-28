@@ -3,8 +3,10 @@ import { SUPABASE_URL } from "../supabase/env";
 /**
  * Content Security Policy.
  *
- * The site loads no third-party script, font or stylesheet — every asset comes
- * from this origin — so most of this policy can be as tight as `'self'`.
+ * The site runs no third-party script, so `script-src` names no other origin.
+ * It does load its two typefaces from Google Fonts (`app/globals.css`), which
+ * is a stylesheet on one host pulling font files from a second, so both hosts
+ * have to be named or the page renders in a fallback face.
  *
  * `script-src` is the exception and the compromise. Next.js emits inline
  * bootstrap scripts carrying a nonce it generates itself; it does not adopt a
@@ -25,19 +27,24 @@ import { SUPABASE_URL } from "../supabase/env";
  */
 export function contentSecurityPolicy(): string {
   // The browser Supabase client talks to the project origin directly for auth
-  // and PostgREST. Nothing else is contacted from the page.
+  // and PostgREST, and the Google sign-in form is redirected through it.
   const supabase = SUPABASE_URL ? new URL(SUPABASE_URL).origin : "";
 
   return [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: blob:",
-    "font-src 'self'",
+    "font-src 'self' https://fonts.gstatic.com",
     `connect-src 'self' ${supabase}`.trim(),
-    // Google is here because the sign-in button submits a form that the server
-    // then redirects to accounts.google.com.
-    "form-action 'self' https://accounts.google.com",
+    // `form-action` is enforced across the whole redirect chain a submission
+    // follows, not just its first hop. Google sign-in posts to this origin,
+    // which redirects to the Supabase authorize endpoint, which redirects to
+    // Google — so every one of the three has to be listed. Omitting the
+    // Supabase origin silently blocks the button with no server-side trace:
+    // the endpoint still answers 303 with a valid URL and the browser refuses
+    // to follow it.
+    `form-action 'self' ${supabase} https://accounts.google.com`.replace(/\s+/g, " "),
     "frame-ancestors 'none'",
     "frame-src 'none'",
     "object-src 'none'",
