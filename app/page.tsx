@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CitizenAssistant } from "../components/CitizenAssistant";
+import { FloatingAssistant } from "../components/FloatingAssistant";
 import { Footer } from "../components/Shell";
 
 export default function RootPage() {
@@ -27,9 +27,7 @@ export default function RootPage() {
           </svg>
           <span className="relative mt-2 block text-center text-xs font-bold uppercase tracking-[.18em] text-white/90 transition group-hover:text-white">Click to ask a question ↓</span>
         </Link>
-        <div id="question-section" className="scroll-mt-8">
-          <CitizenAssistant locale="en" />
-        </div>
+        <FloatingAssistant locale="en" />
       </section>
       <Footer locale="en" />
     </main>
