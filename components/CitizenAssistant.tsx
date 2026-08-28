@@ -86,7 +86,10 @@ export function CitizenAssistant({ locale }: { locale: string }) {
       setTurns((t) => {
         const next = [...t];
         const last = next[next.length - 1];
-        if (res.ok) last.answer = json as AssistantAnswer;
+        // A refusal is a real answer the citizen must see, and the service
+        // returns one with a 503 when it is the service that failed. Only a
+        // response carrying no refusal at all is an error to report as such.
+        if (res.ok || json?.refusal) last.answer = json as AssistantAnswer;
         else last.error = json?.error ?? "Something went wrong. Try again.";
         return next;
       });

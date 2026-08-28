@@ -38,6 +38,19 @@ Style: plain English a person without a lawyer can follow. Short paragraphs. No 
 Close with one line telling the person that this is general information and that only the Marriage Officer can decide their case.`;
 
 /** Shown when there is nothing approved to answer from. Deliberately not model output. */
+/**
+ * The assistant is reachable but its model is not answering.
+ *
+ * This exists because the alternative is worse than unhelpful. Every provider
+ * failure used to fall through to NO_SOURCE, so an outage told citizens their
+ * question was not covered by the marriage Acts — a false statement about the
+ * law, delivered identically to every question asked. A service that is down
+ * has to say it is down.
+ */
+export const UNAVAILABLE =
+  "The assistant is temporarily unavailable — this is a fault on our side, not an answer about your question. " +
+  "Please try again shortly, or contact your Marriage Office directly.";
+
 export const NO_SOURCE =
   "I could not find this in the approved sources I am allowed to use — the marriage Acts and the verified office directory. " +
   "Try naming the Act you are applying under, or contact your Marriage Office directly. " +
@@ -191,8 +204,12 @@ export const liveProvider: ComposeDeps = {
       },
       body: JSON.stringify({
         model: AI_ASSISTANT_MODEL,
-        temperature: 0,
-        max_tokens: 500,
+        // Newer reasoning models reject `max_tokens` and accept only the
+        // default temperature, so neither is sent. The budget is generous
+        // because reasoning tokens are drawn from it too, and a budget spent
+        // entirely on reasoning returns empty content — which reads here as a
+        // refusal rather than as the failure it is.
+        max_completion_tokens: 1500,
         messages: [
           { role: "system", content: system },
           { role: "user", content: user },

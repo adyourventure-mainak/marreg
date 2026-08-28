@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createClient } from "../../../lib/supabase/server";
 import { createServiceClient } from "../../../lib/supabase/service";
 import { runAssistantGraph } from "../../../lib/assistant/graph";
-import { NOT_CONFIGURED, NO_SOURCE } from "../../../lib/assistant/answer";
+import { NOT_CONFIGURED, UNAVAILABLE } from "../../../lib/assistant/answer";
 import { aiConfigured } from "../../../lib/extraction/provider";
 import { ACT_CODES } from "../../../lib/acts";
 
@@ -116,7 +116,9 @@ export async function POST(request: Request) {
       question, locale, citations: [], answered: false,
       refusal: "provider or retrieval error", actorId: user?.id ?? null,
     });
-    // Never surface an internal message to the public.
-    return NextResponse.json({ answered: false, refusal: NO_SOURCE, passages: [] });
+    // Never surface an internal message to the public — but do not dress a
+    // fault up as an answer either. A no-result is a claim about the law; this
+    // is a claim about the service, and only one of them is true here.
+    return NextResponse.json({ answered: false, refusal: UNAVAILABLE, passages: [] }, { status: 503 });
   }
 }

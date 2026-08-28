@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compose, citesOnly, decidesTheCase, restoreVerbatim, NO_SOURCE, NO_DECISION } from "./answer";
+import { compose, citesOnly, decidesTheCase, restoreVerbatim, NO_SOURCE, NO_DECISION, UNAVAILABLE } from "./answer";
 import { searchTerms, asksAboutOffice, districtCodeIn, pincodeIn } from "./retrieve";
 import type { Passage } from "./types";
 
@@ -205,5 +205,39 @@ describe("asksAboutOffice", () => {
 
   it("does not pull office records into a pure question of law", () => {
     expect(asksAboutOffice("How many witnesses are required?")).toBe(false);
+  });
+});
+
+describe("a failing provider is not an answer about the law", () => {
+  const passage = {
+    index: 1,
+    kind: "ACT" as const,
+    citation: "Special Marriage Act, 1954",
+    heading: "Section 5, Notice of intended marriage",
+    body: "Notice shall be given to the Marriage Officer of the district.",
+  };
+
+  it("does not report an outage as a missing source", async () => {
+    // The regression this guards: every provider 400 fell through to
+    // NO_SOURCE, so an outage told every citizen, in identical words, that
+    // their question was not covered by the marriage Acts.
+    const failing = { complete: async () => { throw new Error("provider returned 400"); } };
+    await expect(compose("How long is the notice period?", [passage], failing)).rejects.toThrow();
+  });
+
+  it("keeps the two refusals distinct", () => {
+    expect(UNAVAILABLE).not.toBe(NO_SOURCE);
+    expect(UNAVAILABLE.toLowerCase()).toContain("unavailable");
+    // NO_SOURCE speaks about the sources; UNAVAILABLE must not.
+    expect(UNAVAILABLE).not.toContain("approved sources");
+  });
+
+  it("still refuses when the model returns nothing at all", async () => {
+    // A reasoning model can spend the whole token budget and return empty
+    // content. That is not an answer, and must not be presented as one.
+    const empty = { complete: async () => "" };
+    const out = await compose("How long is the notice period?", [passage], empty);
+    expect(out.answered).toBe(false);
+    expect(out.refusal).toBe(NO_SOURCE);
   });
 });
