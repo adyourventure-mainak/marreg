@@ -22,9 +22,23 @@ const str = (fd: FormData, k: string) => {
 const safeNext = (value: string) =>
   value.startsWith("/") && !value.startsWith("//") && !value.includes("\\\\") ? value : "/en/account";
 
+/**
+ * The origin an auth flow must return to.
+ *
+ * This is the origin the request arrived on, not a configured one. A sign-in
+ * begun on localhost or on a preview deployment has to finish there too: the
+ * PKCE verifier is a cookie, so returning the citizen to a different origin
+ * loses it and the exchange fails with "code challenge does not match".
+ * NEXT_PUBLIC_SITE_URL is only a fallback for contexts with no request host.
+ */
 async function origin(): Promise<string> {
   const h = await headers();
-  return process.env.NEXT_PUBLIC_SITE_URL ?? `https://${h.get("host") ?? "localhost:3000"}`;
+  const host = h.get("host");
+  if (!host) return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+  const local = host.startsWith("localhost") || host.startsWith("127.0.0.1");
+  const proto = h.get("x-forwarded-proto") ?? (local ? "http" : "https");
+  return `${proto}://${host}`;
 }
 
 export async function signUp(_prev: AuthState, formData: FormData): Promise<AuthState> {

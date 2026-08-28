@@ -19,7 +19,14 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) return NextResponse.redirect(`${origin}${next}`);
-    return NextResponse.redirect(`${origin}/en/login?error=${encodeURIComponent(error.message)}`);
+
+    // The verifier is a cookie on the origin that began the flow, so it is
+    // missing when the link is opened in another browser or after the cookie
+    // has been cleared. The citizen needs an instruction, not the raw fault.
+    const message = /code (challenge|verifier)/i.test(error.message)
+      ? "This link could not be opened in this browser. Please request a new link and open it in the same browser you started in."
+      : error.message;
+    return NextResponse.redirect(`${origin}/en/login?error=${encodeURIComponent(message)}`);
   }
 
   return NextResponse.redirect(`${origin}/en/login?error=Missing%20confirmation%20code`);
