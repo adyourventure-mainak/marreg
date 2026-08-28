@@ -11,6 +11,7 @@ export async function Header({ locale = "en" }: { locale?: string }) {
   const t = await getTranslations("Header");
   const profile = (await getProfile()) as Profile | null;
   const isStaff = profile ? STAFF_ROLES.includes(profile.role) : false;
+  const isRgmAdmin = profile?.role === "RGM_ADMIN";
 
   return (
     <>
@@ -42,6 +43,7 @@ export async function Header({ locale = "en" }: { locale?: string }) {
             <Link className="focus hover:text-teal" href={`/${locale}/help`}>{t("help")}</Link>
             {isStaff && <Link className="focus text-teal hover:underline" href={`/${locale}/officer`}>{t("officerDesk")}</Link>}
             {isStaff && <Link className="focus text-teal hover:underline" href={`/${locale}/directory`}>{t("directoryReview")}</Link>}
+            {isRgmAdmin && <Link className="focus text-teal hover:underline" href={`/${locale}/admin`}>{t("administration")}</Link>}
           </div>
 
           <div className="flex shrink-0 items-center gap-3">

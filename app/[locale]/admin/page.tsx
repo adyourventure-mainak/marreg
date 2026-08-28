@@ -1,179 +1,124 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Page } from "../../../components/Shell";
 import { Card, Empty } from "../../../components/ui";
+import { AdminNav } from "../../../components/AdminNav";
 import { createClient, getProfile } from "../../../lib/supabase/server";
-import { assignStaffRole, inviteStaff, revokeStaffInvitation } from "../../actions/admin";
-import type { Office, Profile, StaffInvitation } from "../../../lib/types";
+import { isAdmin, onDateTime } from "../../../lib/admin";
+import type { Profile } from "../../../lib/types";
 
 export const dynamic = "force-dynamic";
 
-const ROLES = ["APPLICANT", "MARRIAGE_OFFICER", "HINDU_REGISTRAR", "DISTRICT_REGISTRAR", "RGM_ADMIN", "SUPPORT_READONLY", "AUDITOR"];
-
-/** A citizen registers themselves, so APPLICANT is never something to authorise. */
-const STAFF_ROLES = ROLES.filter((r) => r !== "APPLICANT");
-
-const label = (r: string) => r.replace(/_/g, " ").toLowerCase();
-const on = (d: string) => new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-
-function State({ invite }: { invite: StaffInvitation }) {
-  const [text, tone] =
-    invite.revoked_at  ? ["Revoked", "text-[var(--muted)]"] :
-    invite.consumed_at ? ["Signed up", "text-teal"] :
-                         ["Awaiting sign-up", "text-saffron"];
-  return <span className={`text-xs font-bold uppercase tracking-widest ${tone}`}>{text}</span>;
+/** A count that reads as a decision to make, not a statistic to admire. */
+function Tile({ label, value, hint, href }: { label: string; value: number; hint: string; href: string }) {
+  return (
+    <Link href={href} className="focus block border border-rule bg-surface p-6 hover:border-teal">
+      <p className="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">{label}</p>
+      <p className="mt-3 font-display text-4xl font-bold">{value}</p>
+      <p className="mt-2 text-sm text-[var(--muted)]">{hint}</p>
+    </Link>
+  );
 }
 
-export default async function AdminPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function AdminOverviewPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const profile = (await getProfile()) as Profile | null;
   if (!profile) redirect(`/${locale}/login?next=/${locale}/admin`);
 
-  if (profile.role !== "RGM_ADMIN") {
+  if (!isAdmin(profile)) {
     return (
-      <Page locale={locale} eyebrow="Administration" title="Restricted area." lede="">
-        <Empty title="No access" body="Only the Registrar General's administrators may manage staff roles." action={{ href: `/${locale}`, label: "Back to the portal" }} />
+      <Page locale={locale} eyebrow="Administration" title="Restricted area.">
+        <Empty
+          title="No access"
+          body="Only the Registrar General's administrators may open the administration area."
+          action={{ href: `/${locale}`, label: "Back to the portal" }}
+        />
       </Page>
     );
   }
 
   const supabase = await createClient();
-  const [{ data: users }, { data: offices }] = await Promise.all([
-    supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(200),
-    supabase.from("offices").select("*").order("name"),
-  ]);
+  const count = (q: { count: number | null }) => q.count ?? 0;
 
-  const { data: invitations } = await supabase
-    .from("staff_invitations")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const [pendingOffices, verifiedOffices, openApplications, awaitingFix, openObjections, invitations, recent] =
+    await Promise.all([
+      supabase.from("offices").select("id", { count: "exact", head: true }).eq("verification_status", "PENDING_REVIEW"),
+      supabase.from("offices").select("id", { count: "exact", head: true }).eq("verification_status", "VERIFIED"),
+      supabase.from("applications").select("id", { count: "exact", head: true })
+        .in("status", ["SUBMITTED", "UNDER_SCRUTINY", "NOTICE_PUBLISHED", "OBJECTION_UNDER_ENQUIRY", "AWAITING_REGISTRATION"]),
+      supabase.from("applications").select("id", { count: "exact", head: true }).eq("status", "AWAITING_APPLICANT_FIX"),
+      supabase.from("objections").select("id", { count: "exact", head: true }).in("status", ["FILED", "UNDER_ENQUIRY"]),
+      supabase.from("staff_invitations").select("email", { count: "exact", head: true })
+        .is("consumed_at", null).is("revoked_at", null),
+      supabase.from("audit_events").select("event, entity_type, entity_id, occurred_at, actor_role")
+        .order("occurred_at", { ascending: false }).limit(8),
+    ]);
 
-  const officeName = (id: string | null) =>
-    (offices as Office[] | null)?.find((o) => o.id === id)?.name ?? null;
+  const events = (recent.data ?? []) as {
+    event: string; entity_type: string; entity_id: string | null;
+    occurred_at: string; actor_role: string | null;
+  }[];
 
   return (
     <Page
       locale={locale}
       eyebrow="Administration"
-      title="Staff and roles."
-      lede="Assign a registry role and an office. Staff only see applications routed to the office assigned here."
+      title="Registrar General's desk."
+      lede="What is waiting on a decision, across the registry."
     >
-      <section className="mt-10">
-        <h2 className="font-display text-2xl font-bold">Authorise a staff login</h2>
-        <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
-          Staff and Marriage Officers cannot register themselves. Enter the official address of the
-          person who will hold the login. The role below is applied the moment they sign up with that
-          exact address — and to no one else.
-        </p>
+      <AdminNav locale={locale} current="overview" />
 
+      <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <Tile
+          label="Directory awaiting review" value={count(pendingOffices)}
+          hint="Not visible to the public until verified" href={`/${locale}/directory`}
+        />
+        <Tile
+          label="Officers published" value={count(verifiedOffices)}
+          hint="Visible in Find a Marriage Officer" href={`/${locale}/offices`}
+        />
+        <Tile
+          label="Applications in progress" value={count(openApplications)}
+          hint="Submitted through to awaiting registration" href={`/${locale}/admin/applications`}
+        />
+        <Tile
+          label="Returned to the applicant" value={count(awaitingFix)}
+          hint="Sent back for correction" href={`/${locale}/admin/applications?status=AWAITING_APPLICANT_FIX`}
+        />
+        <Tile
+          label="Objections open" value={count(openObjections)}
+          hint="Filed or under enquiry" href={`/${locale}/admin/objections`}
+        />
+        <Tile
+          label="Logins authorised, unused" value={count(invitations)}
+          hint="Awaiting the officer's first sign-in" href={`/${locale}/admin/staff`}
+        />
+      </div>
+
+      <h2 className="mt-14 font-display text-2xl font-bold">Latest activity</h2>
+      {events.length ? (
         <Card className="mt-5">
-          <form action={inviteStaff} className="grid gap-4 md:grid-cols-[1.6fr_1fr_1fr_auto] md:items-end">
-            <label className="text-sm font-bold">
-              Official email address
-              <input
-                name="email" type="email" required autoComplete="off"
-                className="focus mt-2 min-h-12 w-full border border-rule bg-paper px-3 text-sm font-normal"
-              />
-            </label>
-            <label className="text-sm font-bold">
-              Role
-              <select name="role" defaultValue="MARRIAGE_OFFICER" className="focus mt-2 min-h-12 w-full border border-rule bg-paper px-3 text-sm font-normal">
-                {STAFF_ROLES.map((r) => <option key={r} value={r}>{label(r)}</option>)}
-              </select>
-            </label>
-            <label className="text-sm font-bold">
-              Office
-              <select name="office_id" defaultValue="" className="focus mt-2 min-h-12 w-full border border-rule bg-paper px-3 text-sm font-normal">
-                <option value="">No office</option>
-                {(offices as Office[] | null)?.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-              </select>
-            </label>
-            <button className="focus min-h-12 bg-saffron px-5 text-sm font-bold">Authorise</button>
-          </form>
-          <p className="mt-3 text-xs text-[var(--muted)]">
-            Officer and registrar roles must name an office — it decides whose applications they see.
+          <ul className="divide-y divide-[var(--rule)]">
+            {events.map((e, i) => (
+              <li key={i} className="flex flex-wrap items-baseline justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <span className="font-bold">{e.event}</span>
+                <span className="text-sm text-[var(--muted)]">
+                  {e.entity_type}
+                  {e.actor_role ? ` · ${e.actor_role.replace(/_/g, " ").toLowerCase()}` : ""}
+                </span>
+                <span className="text-sm text-[var(--muted)]">{onDateTime(e.occurred_at)}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-5">
+            <Link className="focus font-bold text-teal underline" href={`/${locale}/admin/audit`}>
+              The full audit trail →
+            </Link>
           </p>
         </Card>
-
-        <h3 className="mt-10 font-display text-xl font-bold">Authorised addresses</h3>
-        {(invitations as StaffInvitation[] | null)?.length ? (
-          <div className="mt-4 grid gap-3">
-            {(invitations as StaffInvitation[]).map((i) => (
-              <Card key={i.email}>
-                <div className="grid gap-4 md:grid-cols-[1.6fr_1fr_1fr_auto] md:items-center">
-                  <div>
-                    <p className="font-bold">{i.email}</p>
-                    <p className="text-sm text-[var(--muted)]">
-                      Authorised {on(i.created_at)}
-                      {i.consumed_at ? ` · signed up ${on(i.consumed_at)}` : ""}
-                    </p>
-                  </div>
-                  <p className="text-sm font-bold">{label(i.role)}</p>
-                  <p className="text-sm text-[var(--muted)]">{officeName(i.office_id) ?? "No office"}</p>
-                  <div className="flex items-center gap-4 md:justify-end">
-                    <State invite={i} />
-                    {!i.consumed_at && !i.revoked_at && (
-                      <form action={revokeStaffInvitation}>
-                        <input type="hidden" name="email" value={i.email} />
-                        <button className="focus min-h-10 border border-rule px-4 text-sm font-bold">Revoke</button>
-                      </form>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <p className="mt-4 text-sm text-[var(--muted)]">
-            No staff logins have been authorised yet. Every officer account starts here.
-          </p>
-        )}
-      </section>
-
-      <h2 className="mt-14 font-display text-2xl font-bold">Existing accounts</h2>
-      <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
-        Roles for people who have already signed up. You cannot change your own role.
-      </p>
-      <div className="mt-5 grid gap-3">
-        {(users as Profile[] | null)?.map((u) => (
-          <Card key={u.id}>
-            {u.id === profile.id ? (
-              <div className="grid gap-4 md:grid-cols-[1.4fr_1fr_1fr_auto] md:items-center">
-                <div>
-                  <p className="font-bold">{u.full_name ?? "No name given"}</p>
-                  <p className="text-sm text-[var(--muted)]">{u.email}</p>
-                </div>
-                <p className="text-sm font-bold">{label(u.role)}</p>
-                <p className="text-sm text-[var(--muted)]">{officeName(u.office_id) ?? "No office"}</p>
-                <p className="text-xs font-bold uppercase tracking-widest text-[var(--muted)] md:text-right">
-                  Your account
-                </p>
-              </div>
-            ) : (
-            <form action={assignStaffRole} className="grid gap-4 md:grid-cols-[1.4fr_1fr_1fr_auto] md:items-end">
-              <input type="hidden" name="user_id" value={u.id} />
-              <div>
-                <p className="font-bold">{u.full_name ?? "No name given"}</p>
-                <p className="text-sm text-[var(--muted)]">{u.email}</p>
-              </div>
-              <label className="text-sm font-bold">
-                Role
-                <select name="role" defaultValue={u.role} className="focus mt-2 min-h-12 w-full border border-rule bg-paper px-3 text-sm font-normal">
-                  {ROLES.map((r) => <option key={r} value={r}>{r.replace(/_/g, " ").toLowerCase()}</option>)}
-                </select>
-              </label>
-              <label className="text-sm font-bold">
-                Office
-                <select name="office_id" defaultValue={u.office_id ?? ""} className="focus mt-2 min-h-12 w-full border border-rule bg-paper px-3 text-sm font-normal">
-                  <option value="">No office</option>
-                  {(offices as Office[] | null)?.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                </select>
-              </label>
-              <button className="focus min-h-12 bg-saffron px-5 text-sm font-bold">Save</button>
-            </form>
-            )}
-          </Card>
-        ))}
-      </div>
+      ) : (
+        <p className="mt-4 text-sm text-[var(--muted)]">Nothing has been recorded yet.</p>
+      )}
     </Page>
   );
 }
