@@ -69,6 +69,39 @@ export function asksAboutOffice(question: string): boolean {
     .test(question);
 }
 
+/** A six-digit PIN code mentioned in the question, if there is one. */
+export function pincodeIn(question: string): string | null {
+  return /(?<!\d)(\d{6})(?!\d)/.exec(question)?.[1] ?? null;
+}
+
+/**
+ * Resolve a district the citizen named to its code.
+ *
+ * search_offices matches its free-text argument with a substring ILIKE against
+ * the concatenated office fields, so handing it a whole question can only ever
+ * return nothing -- "Where is the marriage office in Alipurduar?" is not a
+ * substring of any address. Testing found exactly that: a question naming a
+ * district retrieved no office at all.
+ *
+ * So the district is resolved to its code first and passed as a real filter.
+ * Matching is on the names in the districts table, English and Bengali, rather
+ * than on a list written here, so a district cannot be recognised under a name
+ * the register does not use.
+ */
+export function districtCodeIn(
+  question: string,
+  districts: { code: string; name: string; name_bn: string | null }[],
+): string | null {
+  const haystack = question.toLowerCase();
+  // Longest name first, so "North 24 Parganas" wins over a shorter substring.
+  const sorted = [...districts].sort((a, b) => b.name.length - a.name.length);
+  for (const d of sorted) {
+    if (haystack.includes(d.name.toLowerCase())) return d.code;
+    if (d.name_bn && question.includes(d.name_bn)) return d.code;
+  }
+  return null;
+}
+
 export async function retrieve(
   supabase: SupabaseClient,
   question: string,
@@ -100,14 +133,20 @@ export async function retrieve(
   }
 
   if (asksAboutOffice(question)) {
-    // Only the office search knows about verification status; passing the raw
-    // question is right here, because it matches on name, locality and PIN.
+    const { data: districts } = await supabase.from("districts").select("code, name, name_bn");
+    const district = districtCodeIn(question, districts ?? []);
+    const pincode = pincodeIn(question);
+
+    // Without a district or a PIN there is nothing to narrow on, and listing
+    // offices at random would be worse than listing none.
+    if (!district && !pincode) return passages;
+
     const { data: offices, error: officeError } = await supabase.rpc("search_offices", {
-      p_query: question.replace(/[%_]/g, " ").slice(0, 80),
-      p_district: null,
+      p_query: null,
+      p_district: district,
       p_act: act,
       p_police_station: null,
-      p_pincode: null,
+      p_pincode: pincode,
     });
     if (officeError) throw new Error(`search_offices failed: ${officeError.message}`);
 

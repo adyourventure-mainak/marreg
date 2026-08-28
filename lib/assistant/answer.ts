@@ -27,7 +27,7 @@ You will be given numbered passages. They are the only information you have. The
 
 Absolute rules:
 - Use ONLY the numbered passages. If they do not answer the question, say so plainly and suggest what the person can do next. Never fill a gap from your own knowledge.
-- Cite every factual sentence with the passage number in square brackets, like [2]. A sentence with no passage behind it must not be written.
+- Cite every factual sentence with the passage number in square brackets, like [2]. A sentence with no passage behind it must not be written. The passage you cite must actually state what the sentence says — do not attach a number to a claim the passage does not make. If no passage states a rule, say the rule is not in the sources rather than citing something close to it.
 - Never give a legal decision or a prediction. Do not tell anyone whether their marriage is valid, whether they are eligible, whether an objection will succeed, or what a court or officer will decide. Explain what the law says and refer them to the Marriage Officer, who is the person empowered to decide.
 - Never state an officer's name, an address, a telephone number, a fee, a date or a time limit that is not printed in a passage.
 - This service covers India, and West Bengal in particular. If the question is about another country's law, say that you only cover Indian marriage law.
@@ -56,6 +56,45 @@ function prompt(question: string, passages: Passage[]): string {
 
   return `Passages:\n\n${body}\n\nQuestion from the public: ${question}`;
 }
+
+/**
+ * Phrases in which the assistant decides the reader's own case.
+ *
+ * Found by testing, not by imagining. Asked "my wife was 17, is our marriage
+ * valid, will the registrar accept it", the model answered with the minimum
+ * age -- a rule that was in no retrieved passage -- attributed it to a section
+ * about divorce, and predicted what the registrar would do. citesOnly() could
+ * not see it: the citation number was in range, so a plausible bracket
+ * laundered an unsourced claim into a decision.
+ *
+ * The lesson is that an in-range citation proves nothing about the sentence
+ * attached to it. So the outcome language itself is refused, whatever it
+ * cites. This costs some legitimate answers, which is the right trade: the
+ * citizen still gets the sections, and a wrong "your marriage is void" is far
+ * more expensive to them than a referral to the officer.
+ */
+const DECIDES_THE_CASE: RegExp[] = [
+  /\byour\b[^.?!]{0,40}\b(marriage|application|registration|case)\b[^.?!]{0,40}\b(is|are|was|will|would|may|might|cannot|can)\b[^.?!]{0,40}\b(valid|invalid|void|voidable|illegal|unlawful|accepted|rejected|refused|approved|registered)\b/i,
+  /\b(the\s+)?(registrar|marriage officer|officer|court)\b[^.?!]{0,50}\b(will|would|may|might|is likely to|shall)\b[^.?!]{0,30}\b(not\s+)?(accept|reject|refuse|approve|register|allow|grant|deny)\b/i,
+  /\byou\b[^.?!]{0,30}\b(are|were|would be|will be|may be|are not|aren't)\b[^.?!]{0,20}\b(eligible|ineligible|entitled|qualified|disqualified|barred)\b/i,
+  /\braises? (serious )?questions? about the validity\b/i,
+];
+
+/**
+ * Does the reply decide, or predict, the reader's own case?
+ *
+ * Exported so the patterns are testable, because a guard nobody can test is a
+ * guard nobody can trust.
+ */
+export function decidesTheCase(text: string): boolean {
+  return DECIDES_THE_CASE.some((re) => re.test(text));
+}
+
+/** Shown instead of a decision. The passages are still displayed beside it. */
+export const NO_DECISION =
+  "I cannot tell you whether this applies to your marriage, or what the Marriage Officer will decide — that decision is theirs alone, and I would be guessing. " +
+  "The sections below are the law on the point; read them, and put your situation to your Marriage Office, who can look at your documents. " +
+  "If it helps, ask me what a particular section requires and I will explain it.";
 
 /**
  * Reject a reply that cites a passage it was never given.
@@ -92,6 +131,9 @@ export async function compose(
   }
   if (!citesOnly(text, passages)) {
     return { answered: false, text: "", passages, refusal: NO_SOURCE };
+  }
+  if (decidesTheCase(text)) {
+    return { answered: false, text: "", passages, refusal: NO_DECISION };
   }
 
   return { answered: true, text, passages, model: AI_MODEL };
