@@ -27,6 +27,16 @@ const SUGGESTIONS = [
   "Who can object to a marriage, and when?",
 ];
 
+function nextStep(question: string, locale: string) {
+  const q = question.toLowerCase();
+  if (/status|track|application number|check my/.test(q)) return { label: "Check application status", href: `/${locale}/status` };
+  if (/office|officer|registrar|near|district|address|phone|contact/.test(q)) return { label: "Find a marriage office", href: `/${locale}/offices` };
+  if (/apply|application|register|registration|document|proof|witness|notice/.test(q)) return { label: "See requirements and apply", href: `/${locale}/acts` };
+  if (/fee|payment|pay|cost|charge/.test(q)) return { label: "View fees and payments", href: `/${locale}/fees` };
+  if (/object|correct|complaint|error/.test(q)) return { label: "Open corrections and objections", href: `/${locale}/objections` };
+  return { label: "Browse registration guidance", href: `/${locale}/help` };
+}
+
 function Sources({ passages, locale }: { passages: Passage[]; locale: string }) {
   if (!passages.length) return null;
   return (
@@ -119,6 +129,12 @@ export function CitizenAssistant({ locale }: { locale: string }) {
                   ) : (
                     <p className="text-sm leading-7">{turn.answer.refusal}</p>
                   )}
+                  <Link
+                    href={nextStep(turn.question, locale).href}
+                    className="focus mt-5 inline-flex min-h-11 items-center bg-saffron px-4 text-sm font-bold"
+                  >
+                    {nextStep(turn.question, locale).label} <span className="ml-2" aria-hidden="true">→</span>
+                  </Link>
                   <Sources passages={turn.answer.passages} locale={locale} />
                 </>
               )}

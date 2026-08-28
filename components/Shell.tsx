@@ -71,7 +71,7 @@ export async function Header({ locale = "en" }: { locale?: string }) {
   );
 }
 
-export async function Footer() {
+export async function Footer({ locale = "en" }: { locale?: string }) {
   const t = await getTranslations("Footer");
   return (
     <footer className="mt-20 bg-marreg-pink py-12 text-white">
@@ -81,6 +81,9 @@ export async function Footer() {
           <p className="mt-3 max-w-sm text-sm leading-6 text-white/80">
             {t("blurb")}
           </p>
+          <Link href={`/${locale}`} className="focus mt-5 inline-block border-b border-white/70 pb-1 text-sm font-bold">
+            Home →
+          </Link>
         </div>
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-white/80">{t("supportLabel")}</div>
