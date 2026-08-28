@@ -56,7 +56,11 @@ const NOISE = new Set([
 export function searchTerms(question: string): string {
   const words = question
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    // \p{M} keeps combining marks. Bengali writes its vowels as marks on the
+    // consonant, so dropping them does not tidy a word, it shatters it:
+    // "কলকাতার" became "কলক" and shorter words vanished under the length
+    // filter, which is why a Bengali question retrieved nothing at all.
+    .replace(/[^\p{L}\p{M}\p{N}\s]/gu, " ")
     .split(/\s+/)
     .filter((w) => w.length > 2 && !NOISE.has(w));
 
@@ -66,9 +70,18 @@ export function searchTerms(question: string): string {
 
 /** Does this question look like it is about finding an office rather than a rule? */
 export function asksAboutOffice(question: string): boolean {
-  return /\b(office|officer|registrar|address|where|near|nearest|phone|contact|timing|district)\b/i
-    .test(question);
+  if (/\b(office|officer|registrar|address|where|near|nearest|phone|contact|timing|district)\b/i
+    .test(question)) return true;
+  // The Bengali half of a bilingual service. \b is a Latin word boundary and
+  // matches nothing useful in Bengali script, so these are plain substrings.
+  return BENGALI_OFFICE.some((term) => question.includes(term));
 }
+
+/** Office, officer, registrar, address, district, phone, where, near. */
+const BENGALI_OFFICE = [
+  "অফিস", "কার্যালয়", "নিবন্ধক", "রেজিস্ট্রার", "অফিসার",
+  "ঠিকানা", "জেলা", "ফোন", "যোগাযোগ", "কোথায়", "কাছে", "নিকট",
+];
 
 /** A six-digit PIN code mentioned in the question, if there is one. */
 export function pincodeIn(question: string): string | null {

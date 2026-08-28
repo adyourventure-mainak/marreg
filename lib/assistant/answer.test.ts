@@ -241,3 +241,34 @@ describe("a failing provider is not an answer about the law", () => {
     expect(out.refusal).toBe(NO_SOURCE);
   });
 });
+
+describe("Bengali questions reach the office directory", () => {
+  const districts = [
+    { code: "WB-PUR", name: "Purulia", name_bn: "পুরুলিয়া" },
+    { code: "WB-KOL", name: "Kolkata", name_bn: "কলকাতা" },
+  ];
+
+  it("keeps combining marks, which Bengali writes its vowels as", () => {
+    // Stripping \p{M} shattered words: "কলকাতার" became "কলক", and shorter
+    // words disappeared under the length filter, so retrieve() bailed before
+    // it ever looked for an office.
+    expect(searchTerms("কলকাতার বিবাহ নিবন্ধকের ঠিকানা")).toContain("কলকাতার");
+    expect(searchTerms("পুরুলিয়া জেলার বিবাহ নিবন্ধক কে?")).toContain("পুরুলিয়া");
+  });
+
+  it("recognises a Bengali office question", () => {
+    // \b is a Latin word boundary and matches nothing in Bengali script.
+    expect(asksAboutOffice("পুরুলিয়া জেলার বিবাহ নিবন্ধক কে?")).toBe(true);
+    expect(asksAboutOffice("দার্জিলিং জেলার বিবাহ অফিস কোথায়?")).toBe(true);
+    expect(asksAboutOffice("কলকাতার বিবাহ নিবন্ধকের ঠিকানা")).toBe(true);
+  });
+
+  it("still resolves the district from its Bengali name", () => {
+    expect(districtCodeIn("পুরুলিয়া জেলার বিবাহ নিবন্ধক কে?", districts)).toBe("WB-PUR");
+    expect(districtCodeIn("কলকাতার বিবাহ নিবন্ধকের ঠিকানা", districts)).toBe("WB-KOL");
+  });
+
+  it("does not treat an unrelated Bengali sentence as an office question", () => {
+    expect(asksAboutOffice("বিবাহ আইন কী বলে?")).toBe(false);
+  });
+});
