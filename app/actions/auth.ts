@@ -18,6 +18,10 @@ const str = (fd: FormData, k: string) => {
   return typeof v === "string" ? v.trim() : "";
 };
 
+/** Return URLs originate in forms, so only allow local application paths. */
+const safeNext = (value: string) =>
+  value.startsWith("/") && !value.startsWith("//") && !value.includes("\\\\") ? value : "/en/account";
+
 async function origin(): Promise<string> {
   const h = await headers();
   return process.env.NEXT_PUBLIC_SITE_URL ?? `https://${h.get("host") ?? "localhost:3000"}`;
@@ -49,7 +53,7 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   const supabase = await createClient();
   const email = str(formData, "email");
   const password = str(formData, "password");
-  const next = str(formData, "next") || "/en/account";
+  const next = safeNext(str(formData, "next"));
 
   if (!email || !password) return { ok: false, error: "Enter your email address and password." };
 
@@ -60,6 +64,17 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   redirect(next);
 }
 
+
+export async function signInWithGoogle(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const next = safeNext(str(formData, "next"));
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(next)}` },
+  });
+  if (error || !data.url) redirect(`/en/login?error=${encodeURIComponent(error?.message ?? "google")}`);
+  redirect(data.url);
+}
 
 export async function requestPasswordReset(_prev: AuthState, formData: FormData): Promise<AuthState> {
   const supabase = await createClient();
@@ -130,7 +145,7 @@ export async function verifyEmailOtp(_prev: OtpState, formData: FormData): Promi
   const supabase = await createClient();
   const email = str(formData, "email");
   const token = str(formData, "token").replace(/\s+/g, "");
-  const next = str(formData, "next") || "/en/account";
+  const next = safeNext(str(formData, "next"));
 
   if (!email) return { ok: false, error: "Start again and enter your email address." };
   if (!/^\d{6}$/.test(token)) {
