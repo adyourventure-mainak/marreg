@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "../../../lib/supabase/server";
 import { createServiceClient } from "../../../lib/supabase/service";
-import { retrieve } from "../../../lib/assistant/retrieve";
-import { compose, liveProvider, NOT_CONFIGURED, NO_SOURCE } from "../../../lib/assistant/answer";
+import { runAssistantGraph } from "../../../lib/assistant/graph";
+import { NOT_CONFIGURED, NO_SOURCE } from "../../../lib/assistant/answer";
 import { aiConfigured } from "../../../lib/extraction/provider";
 import { ACT_CODES } from "../../../lib/acts";
 
@@ -93,8 +93,7 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
 
   try {
-    const passages = await retrieve(supabase, question, act ?? null, locale);
-    const answer = await compose(question, passages, liveProvider);
+    const answer = await runAssistantGraph({ question, act: act ?? null, locale, supabase });
 
     await log({
       question,
