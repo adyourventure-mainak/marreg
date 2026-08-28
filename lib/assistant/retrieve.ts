@@ -163,6 +163,9 @@ export async function retrieve(
       passages.push({
         index: passages.length + 1,
         kind: "OFFICE",
+        // The register spells the officer's name the way the department's PDF
+        // does. Whatever the model writes, that spelling is what is shown.
+        verbatim: o.officer_name ? [o.officer_name] : [],
         citation: o.source_document
           ? `Office of the Registrar General of Marriages — ${o.source_document}`
           : "Verified office directory, MARREG",

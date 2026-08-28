@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compose, citesOnly, decidesTheCase, NO_SOURCE, NO_DECISION } from "./answer";
+import { compose, citesOnly, decidesTheCase, restoreVerbatim, NO_SOURCE, NO_DECISION } from "./answer";
 import { searchTerms, asksAboutOffice, districtCodeIn, pincodeIn } from "./retrieve";
 import type { Passage } from "./types";
 
@@ -46,6 +46,53 @@ describe("compose", () => {
     });
     expect(result.answered).toBe(true);
     expect(result.passages).toHaveLength(1);
+  });
+});
+
+const officePassage: Passage = {
+  index: 2,
+  kind: "OFFICE",
+  citation: "Office of the Registrar General of Marriages — Purulia.pdf",
+  heading: "ASISH KUMAR MAJEE",
+  body: "Officer: ASISH KUMAR MAJEE\nPhone: 9732066976",
+  verbatim: ["ASISH KUMAR MAJEE", "RANJIT KR. CHATTERJEE"],
+};
+
+describe("restoreVerbatim", () => {
+  it("puts back the register's spelling of an officer's name", () => {
+    expect(restoreVerbatim("Contact Asish Kumar Majee for registration.", [officePassage]))
+      .toBe("Contact ASISH KUMAR MAJEE for registration.");
+  });
+
+  it("restores a name whose punctuation would break a naive pattern", () => {
+    expect(restoreVerbatim("Ranjit Kr. Chatterjee is at Jaragora.", [officePassage]))
+      .toBe("RANJIT KR. CHATTERJEE is at Jaragora.");
+  });
+
+  it("leaves an answer that already matches untouched", () => {
+    const t = "ASISH KUMAR MAJEE, 9732066976.";
+    expect(restoreVerbatim(t, [officePassage])).toBe(t);
+  });
+
+  it("changes nothing when there is nothing to restore", () => {
+    const t = "The notice period is thirty days [1].";
+    expect(restoreVerbatim(t, [passage])).toBe(t);
+  });
+
+  it("replaces every occurrence, not only the first", () => {
+    expect(restoreVerbatim("Asish Kumar Majee ... ask Asish Kumar Majee", [officePassage]))
+      .toBe("ASISH KUMAR MAJEE ... ask ASISH KUMAR MAJEE");
+  });
+});
+
+describe("compose restores the register's spelling", () => {
+  it("corrects a re-cased name in a real answer", async () => {
+    const result = await compose("Where is the Purulia office?", [passage, officePassage], {
+      complete: async () => "You can contact Asish Kumar Majee [2].",
+    });
+    expect(result.answered).toBe(true);
+    expect(result.text).toContain("ASISH KUMAR MAJEE");
+    expect(result.text).not.toContain("Asish Kumar Majee");
   });
 });
 

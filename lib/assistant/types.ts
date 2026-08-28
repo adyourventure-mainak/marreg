@@ -14,6 +14,14 @@ export type Passage = {
   page?: number | null;
   /** Where a citizen can go to read the same record on this site. */
   href?: string;
+  /**
+   * Strings that must reach the citizen exactly as the register holds them.
+   *
+   * An officer's name is an identifier, not prose. Restoring these after the
+   * model has written is what makes "copied exactly" true rather than
+   * requested — see restoreVerbatim() in answer.ts.
+   */
+  verbatim?: string[];
 };
 
 export type AssistantAnswer = {

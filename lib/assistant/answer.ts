@@ -114,6 +114,36 @@ export function citesOnly(text: string, passages: Passage[]): boolean {
   return true;
 }
 
+/**
+ * Put the register's own spelling back into the answer.
+ *
+ * Asked for the Purulia offices, the model returned "Asish Kumar Majee" where
+ * the register — and the department's PDF behind it — has "ASISH KUMAR MAJEE".
+ * The prompt already said to copy office details exactly; it was ignored, and
+ * asking more firmly is not a control.
+ *
+ * An officer's name is an identifier, so it should reach the citizen in the
+ * form the department published. Title-casing is not a neutral tidy-up either:
+ * applied to names like "MD.SAHABUDDIN KHAN" or "RANJIT KR. CHATTERJEE" it
+ * makes decisions about capitalisation that belong to the person, not to us.
+ *
+ * This can only move text back towards the source: it rewrites a
+ * case-insensitive match of a string the register holds into that exact
+ * string, and touches nothing else.
+ */
+export function restoreVerbatim(text: string, passages: Passage[]): string {
+  const exact = passages.flatMap((p) => p.verbatim ?? []).filter(Boolean);
+  // Longest first, so a name contained inside a longer one is not part-replaced.
+  const ordered = [...new Set(exact)].sort((a, b) => b.length - a.length);
+
+  let out = text;
+  for (const value of ordered) {
+    const pattern = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    out = out.replace(new RegExp(pattern, "gi"), value);
+  }
+  return out;
+}
+
 export type ComposeDeps = {
   /** Injected so the guardrails can be tested without a provider. */
   complete(system: string, user: string, signal?: AbortSignal): Promise<string>;
@@ -140,7 +170,7 @@ export async function compose(
     return { answered: false, text: "", passages, refusal: NO_DECISION };
   }
 
-  return { answered: true, text, passages, model: AI_MODEL };
+  return { answered: true, text: restoreVerbatim(text, passages), passages, model: AI_MODEL };
 }
 
 /**
