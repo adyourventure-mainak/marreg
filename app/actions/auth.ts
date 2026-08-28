@@ -60,16 +60,6 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   redirect(next);
 }
 
-export async function signInWithGoogle(formData: FormData): Promise<void> {
-  const supabase = await createClient();
-  const next = str(formData, "next") || "/en/account";
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(next)}` },
-  });
-  if (error || !data.url) redirect(`/en/login?error=${encodeURIComponent(error?.message ?? "google")}`);
-  redirect(data.url);
-}
 
 export async function requestPasswordReset(_prev: AuthState, formData: FormData): Promise<AuthState> {
   const supabase = await createClient();
