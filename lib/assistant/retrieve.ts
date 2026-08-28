@@ -140,12 +140,9 @@ export async function retrieve(
     const district = districtCodeIn(question, districts ?? []);
     const pincode = pincodeIn(question);
 
-    // Without a district or a PIN there is nothing to narrow on, and listing
-    // offices at random would be worse than listing none.
-    if (!district && !pincode) return passages;
-
     const { data: offices, error: officeError } = await supabase.rpc("search_offices", {
-      p_query: null,
+      // District/PIN use dedicated filters; otherwise terms support officer or office-name questions.
+      p_query: district || pincode ? null : searchTerms(question),
       p_district: district,
       p_act: act,
       p_police_station: null,

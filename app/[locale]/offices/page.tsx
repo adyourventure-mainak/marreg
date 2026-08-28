@@ -4,6 +4,7 @@ import { Card, Empty } from "../../../components/ui";
 import { createClient } from "../../../lib/supabase/server";
 import { ACTS, type ActCode } from "../../../lib/acts";
 import type { District, Office } from "../../../lib/types";
+import { OfficeRating } from "../../../components/OfficeRating";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,11 @@ export default async function OfficesPage({
   });
 
   const list = (offices ?? []) as Office[];
+  const { data: ratings } = await supabase.from("office_ratings").select("office_id, rating").in("office_id", list.map((o) => o.id));
+  const ratingFor = (id: string) => {
+    const values = (ratings ?? []).filter((r) => r.office_id === id).map((r) => r.rating);
+    return { count: values.length, average: values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0 };
+  };
   const districtName = (code: string) => (districts as District[] | null)?.find((d) => d.code === code)?.name ?? code;
 
   return (
@@ -128,6 +134,8 @@ export default async function OfficesPage({
                     ))}
                   </ul>
                 )}
+
+                <OfficeRating officeId={o.id} {...ratingFor(o.id)} />
 
                 <Link
                   href={`/${locale}/apply?office=${o.id}`}
