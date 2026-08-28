@@ -28,7 +28,7 @@ export default async function AdminPage({ params }: { params: Promise<{ locale: 
   const profile = (await getProfile()) as Profile | null;
   if (!profile) redirect(`/${locale}/login?next=/${locale}/admin`);
 
-  if (!["RGM_ADMIN", "DISTRICT_REGISTRAR"].includes(profile.role)) {
+  if (profile.role !== "RGM_ADMIN") {
     return (
       <Page locale={locale} eyebrow="Administration" title="Restricted area." lede="">
         <Empty title="No access" body="Only the Registrar General's administrators may manage staff roles." action={{ href: `/${locale}`, label: "Back to the portal" }} />

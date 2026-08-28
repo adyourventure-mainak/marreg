@@ -29,12 +29,15 @@ create table if not exists staff_invitations (
 
 alter table staff_invitations enable row level security;
 
+-- Invitations are written only through the audited security-definer functions
+-- below. District registrars are intentionally excluded: they must never be
+-- able to create a higher-privilege account or alter an office boundary.
 drop policy if exists staff_invitations_admin_all on staff_invitations;
-create policy staff_invitations_admin_all on staff_invitations for all
-  using (is_admin()) with check (is_admin());
+create policy staff_invitations_rgm_read on staff_invitations for select
+  using (current_user_role() = 'RGM_ADMIN');
 
-revoke all on staff_invitations from public, anon;
-grant select, insert, update, delete on staff_invitations to authenticated;
+revoke all on staff_invitations from public, anon, authenticated;
+grant select on staff_invitations to authenticated;
 
 -- --------------------------------------------------------- apply on sign-up
 -- Replaces the trigger from 20260825000100_init.sql. A new auth user still
@@ -77,7 +80,7 @@ declare
   norm text := lower(btrim(coalesce(p_email, '')));
   row  staff_invitations;
 begin
-  if not is_admin() then
+  if current_user_role() <> 'RGM_ADMIN' then
     raise exception 'Only an administrator may authorise a staff login';
   end if;
   if norm = '' or norm not like '%_@_%._%' then
@@ -85,6 +88,9 @@ begin
   end if;
   if p_role = 'APPLICANT' then
     raise exception 'Citizens register themselves; an invitation is for staff roles only';
+  end if;
+  if p_role not in ('RGM_ADMIN','AUDITOR','SUPPORT_READONLY') and p_office is null then
+    raise exception 'This staff role requires an office';
   end if;
 
   insert into staff_invitations (email, role, office_id, note, created_by)
@@ -106,7 +112,7 @@ create or replace function revoke_staff_invitation(p_email text)
 returns void language plpgsql security definer set search_path = public as $fn$
 declare norm text := lower(btrim(coalesce(p_email, '')));
 begin
-  if not is_admin() then
+  if current_user_role() <> 'RGM_ADMIN' then
     raise exception 'Only an administrator may revoke a staff login';
   end if;
   update staff_invitations set revoked_at = now() where email = norm and revoked_at is null;
@@ -122,7 +128,7 @@ create or replace function set_user_role(p_user uuid, p_role user_role, p_office
 returns void language plpgsql security definer set search_path = public as $fn$
 declare before_role user_role; before_office uuid;
 begin
-  if not is_admin() then
+  if current_user_role() <> 'RGM_ADMIN' then
     raise exception 'Only an administrator may change a role';
   end if;
   if p_user = auth.uid() then
@@ -132,6 +138,9 @@ begin
   select role, office_id into before_role, before_office from profiles where id = p_user;
   if not found then
     raise exception 'No such user';
+  end if;
+  if p_role not in ('RGM_ADMIN','AUDITOR','SUPPORT_READONLY') and p_office is null then
+    raise exception 'This staff role requires an office';
   end if;
 
   update profiles set role = p_role, office_id = p_office, updated_at = now() where id = p_user;
@@ -184,5 +193,11 @@ begin
 
   if not has_column_privilege('authenticated', 'public.profiles', 'full_name', 'update') then
     raise exception 'citizens can no longer edit their own name';
+  end if;
+
+  if has_table_privilege('authenticated', 'public.staff_invitations', 'insert')
+     or has_table_privilege('authenticated', 'public.staff_invitations', 'update')
+     or has_table_privilege('authenticated', 'public.staff_invitations', 'delete') then
+    raise exception 'staff invitations are directly writable';
   end if;
 end $assert$;
