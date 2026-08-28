@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Header, Footer } from "../../components/Shell";
-import { CitizenAssistant } from "../../components/CitizenAssistant";
+import { FloatingAssistant } from "../../components/FloatingAssistant";
 import { ACTS, ACT_CODES } from "../../lib/acts";
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
@@ -30,6 +30,13 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           <p className="mb-5 text-xs font-bold uppercase tracking-[.18em] text-teal">{t("eyebrow")}</p>
           <h1 className="max-w-xl text-5xl leading-[.98] md:text-7xl">{t("title")}</h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-[var(--muted)]">{t("lede")}</p>
+
+          <Link
+            href={`/${locale}/help/ask`}
+            className="focus mt-7 inline-flex min-h-12 items-center border border-teal px-5 text-sm font-bold text-teal transition hover:bg-saffron-tint"
+          >
+            Ask the registry assistant <span className="ml-2" aria-hidden="true">↓</span>
+          </Link>
 
           <div id="act-finder" className="mt-9 border border-rule bg-surface p-5 shadow-[0_12px_28px_rgba(23,33,31,.08)]">
             <label htmlFor="act" className="mb-2 block text-sm font-bold">{t("finderLabel")}</label>
@@ -66,19 +73,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         </div>
       </section>
 
-      <section id="ask-assistant" className="border-y border-rule bg-paper">
-        <div className="page py-16 md:py-20">
-          <div className="max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-[.18em] text-teal">Ask the registry assistant</p>
-            <h2 className="mt-4 text-4xl leading-tight md:text-5xl">Get an answer before you make the trip.</h2>
-            <p className="mt-5 text-lg leading-8 text-[var(--muted)]">
-              Ask about documents, timelines, witnesses, or your nearest marriage office. Answers are grounded
-              in the marriage Acts and verified office directory, with sources shown below each answer.
-            </p>
-          </div>
-          <CitizenAssistant locale={locale} />
-        </div>
-      </section>
+      <FloatingAssistant locale={locale} />
 
       <section className="border-y border-rule bg-surface">
         <div className="page grid gap-0 md:grid-cols-3">
