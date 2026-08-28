@@ -2,11 +2,12 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Header, Footer } from "../../components/Shell";
 import { FloatingAssistant } from "../../components/FloatingAssistant";
-import { ACTS, ACT_CODES } from "../../lib/acts";
+import { ACT_CODES } from "../../lib/acts";
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations("Home");
+  const ta = await getTranslations("Acts");
 
   const actions = [
     { key: "acts", href: `/${locale}/acts` },
@@ -35,7 +36,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
             href={`/${locale}/help/ask`}
             className="focus mt-7 inline-flex min-h-12 items-center border border-teal px-5 text-sm font-bold text-teal transition hover:bg-saffron-tint"
           >
-            Ask the registry assistant <span className="ml-2" aria-hidden="true">↓</span>
+            {t("askAssistant")} <span className="ml-2" aria-hidden="true">↓</span>
           </Link>
 
           <div id="act-finder" className="mt-9 border border-rule bg-surface p-5 shadow-[0_12px_28px_rgba(23,33,31,.08)]">
@@ -44,7 +45,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               <select id="act" className="focus min-h-12 flex-1 border border-rule bg-paper px-4 text-sm">
                 <option>{t("finderPlaceholder")}</option>
                 {ACT_CODES.map((code) => (
-                  <option key={code} value={code}>{ACTS[code].label}</option>
+                  <option key={code} value={code}>{ta(`rules.${code}.label`)}</option>
                 ))}
               </select>
               <Link href={`/${locale}/acts`} className="focus inline-flex min-h-12 items-center justify-center bg-saffron px-5 text-sm font-bold">
@@ -68,7 +69,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
             {t("ledgerCaption")}
           </div>
           <div className="absolute bottom-4 right-10 text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">
-            RGM · West Bengal
+            {t("ledgerStamp")}
           </div>
         </div>
       </section>

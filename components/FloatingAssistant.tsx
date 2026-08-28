@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { CitizenAssistant } from "./CitizenAssistant";
 
 export function FloatingAssistant({ locale }: { locale: string }) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("FloatingAssistant");
 
   return (
     <div className="fixed bottom-5 right-5 z-30 flex flex-col items-end gap-3 sm:bottom-7 sm:right-7">
@@ -15,12 +17,12 @@ export function FloatingAssistant({ locale }: { locale: string }) {
         >
           <div className="flex items-start justify-between gap-5 border-b border-rule pb-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[.18em] text-teal">MARREG assistant</p>
-              <h2 className="mt-2 font-display text-2xl">Ask about registration</h2>
+              <p className="text-xs font-bold uppercase tracking-[.18em] text-teal">{t("eyebrow")}</p>
+              <h2 className="mt-2 font-display text-2xl">{t("heading")}</h2>
             </div>
             <button
               type="button"
-              aria-label="Close registry assistant"
+              aria-label={t("close")}
               onClick={() => setOpen(false)}
               className="focus flex h-9 w-9 shrink-0 items-center justify-center border border-rule text-xl leading-none"
             >
@@ -34,7 +36,7 @@ export function FloatingAssistant({ locale }: { locale: string }) {
       <button
         type="button"
         aria-expanded={open}
-        aria-label={open ? "Close registry assistant" : "Open registry assistant"}
+        aria-label={open ? t("close") : t("open")}
         onClick={() => setOpen((value) => !value)}
         className="group focus relative flex h-16 w-16 items-center justify-center rounded-full border-2 border-paper bg-teal text-paper shadow-[0_8px_24px_rgba(23,33,31,.28)] transition hover:scale-105 hover:bg-ink"
       >
@@ -47,7 +49,7 @@ export function FloatingAssistant({ locale }: { locale: string }) {
             <path d="M8 10h8M8 13h5" strokeLinecap="round" />
           </svg>
         )}
-        <span className="sr-only">{open ? "Close assistant" : "Ask the registry assistant"}</span>
+        <span className="sr-only">{open ? t("closeShort") : t("askShort")}</span>
       </button>
     </div>
   );

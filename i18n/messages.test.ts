@@ -1,0 +1,96 @@
+import { describe, expect, it } from "vitest";
+import en from "../messages/en.json";
+import bn from "../messages/bn.json";
+import { ACTS } from "../lib/acts";
+import { ACT_CODES, ACT_DOCUMENT_KEYS } from "./acts";
+
+type Tree = { [k: string]: string | Tree };
+
+const paths = (node: Tree, prefix = ""): string[] =>
+  Object.entries(node).flatMap(([k, v]) =>
+    typeof v === "string" ? [`${prefix}${k}`] : paths(v, `${prefix}${k}.`),
+  );
+
+/** Every `{placeholder}` an ICU string expects, so both locales agree. */
+const placeholders = (s: string) =>
+  [...s.matchAll(/\{\s*([a-zA-Z0-9_]+)/g)].map((m) => m[1]).sort();
+
+const leaf = (node: Tree, path: string): string =>
+  path.split(".").reduce<string | Tree>((n, k) => (n as Tree)[k], node) as string;
+
+const enPaths = paths(en as Tree);
+const bnPaths = paths(bn as Tree);
+
+/**
+ * A missing key does not fail a build — next-intl renders the key path, and a
+ * key that exists but was never translated renders English on a Bengali page.
+ * Neither shows up in a smoke test, so both are asserted here.
+ */
+describe("the two locales carry the same messages", () => {
+  it("has a Bengali string for every English one", () => {
+    expect(enPaths.filter((p) => !bnPaths.includes(p))).toEqual([]);
+  });
+
+  it("carries no Bengali string the English side has dropped", () => {
+    expect(bnPaths.filter((p) => !enPaths.includes(p))).toEqual([]);
+  });
+
+  it("names the same placeholders in both locales", () => {
+    const mismatched = enPaths
+      .filter((p) => bnPaths.includes(p))
+      .filter((p) => placeholders(leaf(en as Tree, p)).join() !== placeholders(leaf(bn as Tree, p)).join());
+    expect(mismatched).toEqual([]);
+  });
+
+  it("leaves no Bengali value identical to its English source", () => {
+    // Proper nouns and codes legitimately match; anything longer is a string
+    // that was copied across and never translated.
+    const untranslated = enPaths.filter((p) => {
+      const e = leaf(en as Tree, p);
+      return e.length > 24 && leaf(bn as Tree, p) === e;
+    });
+    expect(untranslated).toEqual([]);
+  });
+
+  it("writes Bengali in Bengali script", () => {
+    const notBengali = bnPaths.filter((p) => {
+      const v = leaf(bn as Tree, p);
+      return v.length > 24 && !/\p{Script=Bengali}/u.test(v);
+    });
+    expect(notBengali).toEqual([]);
+  });
+});
+
+/**
+ * `lib/acts.ts` stays the source of truth for the statutory periods, and its
+ * own drift test ties those to the migration. Its display strings are
+ * duplicated into the message files so they can be translated, which is a
+ * second place to forget. These tests close that gap.
+ */
+describe("the Act messages match the Act rules they describe", () => {
+  it("carries the same English label, short label and summary", () => {
+    for (const code of ACT_CODES) {
+      const m = (en as Tree).Acts as Tree;
+      const rule = (m.rules as Tree)[code] as Tree;
+      expect(rule.label, code).toBe(ACTS[code].label);
+      expect(rule.shortLabel, code).toBe(ACTS[code].shortLabel);
+      expect(rule.summary, code).toBe(ACTS[code].summary);
+    }
+  });
+
+  it("carries the same document list, in the same order", () => {
+    for (const code of ACT_CODES) {
+      const docs = ((((en as Tree).Acts as Tree).rules as Tree)[code] as Tree).documents as Tree;
+      expect(ACT_DOCUMENT_KEYS[code].map((k) => docs[k]), code).toEqual(ACTS[code].documents);
+    }
+  });
+
+  it("translates every document name", () => {
+    for (const code of ACT_CODES) {
+      const docs = ((((bn as Tree).Acts as Tree).rules as Tree)[code] as Tree).documents as Tree;
+      for (const key of ACT_DOCUMENT_KEYS[code]) {
+        expect(docs[key], `${code}.${key}`).toMatch(/\p{Script=Bengali}/u);
+      }
+    }
+  });
+});

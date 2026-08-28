@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { ACTS, ACT_CODES, type ActCode } from "../lib/acts";
+import { useTranslations } from "next-intl";
+import { ACT_CODES, type ActCode } from "../lib/acts";
 import type { AssistantAnswer, Passage } from "../lib/assistant/types";
 import { Alert, Field } from "./ui";
 
@@ -20,39 +21,50 @@ type Turn = {
   error?: string;
 };
 
-const SUGGESTIONS = [
-  "What documents do I need for registration?",
-  "How long is the notice period under the Special Marriage Act?",
-  "How many witnesses must attend?",
-  "Who can object to a marriage, and when?",
-];
+const SUGGESTIONS = ["documents", "notice", "witnesses", "objection"] as const;
 
-function nextStep(question: string, locale: string) {
+/**
+ * Where to send the citizen after an answer, matched on what they asked.
+ *
+ * Both scripts are matched. Bengali writes its vowels as combining marks and
+ * has no Latin word boundary, so the Bengali side is plain substrings rather
+ * than `\b`-delimited alternatives — the same reason `asksAboutOffice` in the
+ * retrieval layer matches that way. Without these a Bengali question matched
+ * nothing and every answer ended on the generic guidance link.
+ */
+const ROUTES = [
+  { key: "status", path: "status", en: /status|track|application number|check my/, bn: ["অবস্থা", "ট্র্যাক", "আবেদন নম্বর"] },
+  { key: "offices", path: "offices", en: /office|officer|registrar|near|district|address|phone|contact/, bn: ["অফিস", "কার্যালয়", "অফিসার", "রেজিস্ট্রার", "নিবন্ধক", "ঠিকানা", "জেলা", "ফোন", "কোথায়", "কাছে"] },
+  { key: "acts", path: "acts", en: /apply|application|register|registration|document|proof|witness|notice/, bn: ["আবেদন", "নিবন্ধন", "নথি", "প্রমাণ", "সাক্ষী", "নোটিশ"] },
+  { key: "fees", path: "fees", en: /fee|payment|pay|cost|charge/, bn: ["ফি", "খরচ", "অর্থপ্রদান", "টাকা", "মূল্য"] },
+  { key: "objections", path: "objections", en: /object|correct|complaint|error/, bn: ["আপত্তি", "সংশোধন", "অভিযোগ", "ভুল"] },
+] as const;
+
+export function nextStepKey(question: string): string {
   const q = question.toLowerCase();
-  if (/status|track|application number|check my/.test(q)) return { label: "Check application status", href: `/${locale}/status` };
-  if (/office|officer|registrar|near|district|address|phone|contact/.test(q)) return { label: "Find a marriage office", href: `/${locale}/offices` };
-  if (/apply|application|register|registration|document|proof|witness|notice/.test(q)) return { label: "See requirements and apply", href: `/${locale}/acts` };
-  if (/fee|payment|pay|cost|charge/.test(q)) return { label: "View fees and payments", href: `/${locale}/fees` };
-  if (/object|correct|complaint|error/.test(q)) return { label: "Open corrections and objections", href: `/${locale}/objections` };
-  return { label: "Browse registration guidance", href: `/${locale}/help` };
+  const hit = ROUTES.find((r) => r.en.test(q) || r.bn.some((term) => question.includes(term)));
+  return hit ? hit.key : "help";
 }
 
-function Sources({ passages, locale }: { passages: Passage[]; locale: string }) {
+const pathFor = (key: string) => ROUTES.find((r) => r.key === key)?.path ?? "help";
+
+function Sources({ passages }: { passages: Passage[] }) {
+  const t = useTranslations("Assistant");
   if (!passages.length) return null;
   return (
     <div className="mt-5 border-t border-rule pt-4">
-      <p className="text-xs font-bold uppercase tracking-[.18em] text-teal">Sources</p>
+      <p className="text-xs font-bold uppercase tracking-[.18em] text-teal">{t("sources")}</p>
       <ol className="mt-3 space-y-3">
         {passages.map((p) => (
           <li key={p.index} className="text-sm leading-6">
             <span className="font-bold">[{p.index}] {p.heading}</span>
             <span className="block text-[var(--muted)]">
               {p.citation}
-              {p.page ? `, page ${p.page}` : ""}
+              {p.page ? t("page", { page: p.page }) : ""}
             </span>
             {p.href && (
               <Link href={p.href} className="focus text-teal underline underline-offset-4">
-                Read the full record →
+                {t("readRecord")} <span aria-hidden="true">→</span>
               </Link>
             )}
           </li>
@@ -67,13 +79,15 @@ export function CitizenAssistant({ locale }: { locale: string }) {
   const [pending, setPending] = useState(false);
   const [act, setAct] = useState<ActCode | "">("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const t = useTranslations("Assistant");
+  const ta = useTranslations("Acts");
 
   async function ask(question: string) {
     const trimmed = question.trim();
     if (!trimmed || pending) return;
 
     setPending(true);
-    setTurns((t) => [...t, { question: trimmed, answer: null }]);
+    setTurns((prev) => [...prev, { question: trimmed, answer: null }]);
 
     try {
       const res = await fetch("/api/assistant", {
@@ -83,20 +97,20 @@ export function CitizenAssistant({ locale }: { locale: string }) {
       });
       const json = await res.json();
 
-      setTurns((t) => {
-        const next = [...t];
+      setTurns((prev) => {
+        const next = [...prev];
         const last = next[next.length - 1];
         // A refusal is a real answer the citizen must see, and the service
         // returns one with a 503 when it is the service that failed. Only a
         // response carrying no refusal at all is an error to report as such.
         if (res.ok || json?.refusal) last.answer = json as AssistantAnswer;
-        else last.error = json?.error ?? "Something went wrong. Try again.";
+        else last.error = json?.error ?? t("genericError");
         return next;
       });
     } catch {
-      setTurns((t) => {
-        const next = [...t];
-        next[next.length - 1].error = "Could not reach the assistant. Check your connection.";
+      setTurns((prev) => {
+        const next = [...prev];
+        next[next.length - 1].error = t("networkError");
         return next;
       });
     } finally {
@@ -106,11 +120,7 @@ export function CitizenAssistant({ locale }: { locale: string }) {
 
   return (
     <div className="mt-10">
-      <Alert tone="info">
-        This assistant answers only from the marriage Acts and the office directory that registry
-        staff have verified. It cannot decide your case, and it is not legal advice. Only the
-        Marriage Officer can decide whether a marriage may be registered.
-      </Alert>
+      <Alert tone="info">{t("disclaimer")}</Alert>
 
       <div className="mt-8 space-y-6">
         {turns.map((turn, i) => (
@@ -120,7 +130,7 @@ export function CitizenAssistant({ locale }: { locale: string }) {
               {turn.error && <p className="text-sm leading-6 text-[#8a2b2b]">{turn.error}</p>}
 
               {!turn.answer && !turn.error && (
-                <p className="text-sm leading-6 text-[var(--muted)]">Searching the approved sources…</p>
+                <p className="text-sm leading-6 text-[var(--muted)]">{t("searching")}</p>
               )}
 
               {turn.answer && (
@@ -133,12 +143,12 @@ export function CitizenAssistant({ locale }: { locale: string }) {
                     <p className="text-sm leading-7">{turn.answer.refusal}</p>
                   )}
                   <Link
-                    href={nextStep(turn.question, locale).href}
+                    href={`/${locale}/${pathFor(nextStepKey(turn.question))}`}
                     className="focus mt-5 inline-flex min-h-11 items-center bg-saffron px-4 text-sm font-bold"
                   >
-                    {nextStep(turn.question, locale).label} <span className="ml-2" aria-hidden="true">→</span>
+                    {t(`nextStep.${nextStepKey(turn.question)}`)} <span className="ml-2" aria-hidden="true">→</span>
                   </Link>
-                  <Sources passages={turn.answer.passages} locale={locale} />
+                  <Sources passages={turn.answer.passages} />
                 </>
               )}
             </div>
@@ -155,29 +165,29 @@ export function CitizenAssistant({ locale }: { locale: string }) {
           void ask(value);
         }}
       >
-        <Field label="Your question">
+        <Field label={t("questionLabel")}>
           <input
             ref={inputRef}
             name="question"
             maxLength={500}
-            placeholder="e.g. How many days after the notice can we marry?"
+            placeholder={t("questionPlaceholder")}
             className="mt-2 min-h-12 w-full border border-rule bg-paper px-4 text-base font-normal"
           />
         </Field>
 
         <Field
-          label="Act (optional)"
+          label={t("actLabel")}
           className="mt-5"
-          hint="Narrows the answer to one law. Leave blank to search all of them."
+          hint={t("actHint")}
         >
           <select
             value={act}
             onChange={(e) => setAct(e.target.value as ActCode | "")}
             className="mt-2 min-h-12 w-full border border-rule bg-paper px-4 text-base font-normal"
           >
-            <option value="">All Acts</option>
+            <option value="">{t("allActs")}</option>
             {ACT_CODES.map((code) => (
-              <option key={code} value={code}>{ACTS[code].label}</option>
+              <option key={code} value={code}>{ta(`rules.${code}.label`)}</option>
             ))}
           </select>
         </Field>
@@ -187,22 +197,22 @@ export function CitizenAssistant({ locale }: { locale: string }) {
           disabled={pending}
           className="focus mt-6 min-h-12 border border-ink bg-ink px-6 text-sm font-bold text-paper disabled:opacity-50"
         >
-          {pending ? "Searching…" : "Ask"}
+          {pending ? t("asking") : t("ask")}
         </button>
       </form>
 
       {turns.length === 0 && (
         <div className="mt-8">
-          <p className="text-xs font-bold uppercase tracking-[.18em] text-teal">Try asking</p>
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-teal">{t("tryAsking")}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {SUGGESTIONS.map((s) => (
+            {SUGGESTIONS.map((key) => (
               <button
-                key={s}
+                key={key}
                 type="button"
-                onClick={() => void ask(s)}
+                onClick={() => void ask(t(`suggestions.${key}`))}
                 className="focus border border-rule bg-surface px-4 py-2 text-left text-sm"
               >
-                {s}
+                {t(`suggestions.${key}`)}
               </button>
             ))}
           </div>

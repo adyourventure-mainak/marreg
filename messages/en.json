@@ -19,7 +19,8 @@
     "blurb": "Online marriage registration services of the Office of the Registrar General of Marriages, Government of West Bengal.",
     "supportLabel": "Citizen support",
     "supportHeading": "Contact the RGM office",
-    "copyright": "© Government of West Bengal · NIC"
+    "copyright": "© Government of West Bengal · NIC",
+    "home": "Home"
   },
   "Home": {
     "eyebrow": "Office of the Registrar General of Marriages",
@@ -68,7 +69,9 @@
       "officesBody": "Find Marriage Officers and offices.",
       "helpTitle": "Notices & help",
       "helpBody": "FAQs, circulars, fees, and guidance."
-    }
+    },
+    "askAssistant": "Ask the registry assistant",
+    "ledgerStamp": "RGM · West Bengal"
   },
   "Status": {
     "eyebrow": "Track",
@@ -78,6 +81,344 @@
   "Fees": {
     "eyebrow": "Fees and payments",
     "title": "Know the cost before you apply.",
-    "lede": "Fees depend on the Act you apply under. Confirm the current figure with your Marriage Officer before paying."
+    "lede": "Fees depend on the Act you apply under. Confirm the current figure with your Marriage Officer before paying.",
+    "service": "Service",
+    "act": "Act",
+    "fee": "Fee",
+    "allActs": "All Acts",
+    "empty": "The fee schedule has not been published yet.",
+    "note": "Fees shown here are drawn from the published schedule held by the Office of the Registrar General of Marriages. Where a gazette reference is marked as pending, the figure has not yet been verified against the current notification.",
+    "purposes": {
+      "applicationForRegistration": "Application for registration",
+      "certifiedCopyOfCertificate": "Certified copy of certificate",
+      "noticeOfIntendedMarriage": "Notice of intended marriage",
+      "searchOfMarriageRecords": "Search of marriage records"
+    }
+  },
+  "Common": {
+    "phone": "Phone",
+    "email": "Email",
+    "optional": "optional"
+  },
+  "Acts": {
+    "eyebrow": "Acts & rules",
+    "title": "Which law applies to your marriage?",
+    "lede": "Each Act sets its own eligibility, notice period, objection window, and required documents. Choose the one that matches your ceremony.",
+    "actIndex": "Act {index}",
+    "alreadySolemnised": "Already solemnised",
+    "noticeFirst": "Notice first",
+    "objectionPeriod": "Objection period",
+    "objectionValue": "{days} days from receipt",
+    "noticePeriod": "Notice period",
+    "completionWindow": "Completion window",
+    "noticeValue": "{days} days",
+    "completionValue": "{months} calendar months",
+    "documents": "Documents",
+    "documentsValue": "{count} required",
+    "applyUnder": "Apply under this Act",
+    "rules": {
+      "HMA_1955": {
+        "label": "The Hindu Marriage Act, 1955",
+        "shortLabel": "Hindu Marriage Act",
+        "summary": "For a marriage already solemnised under Hindu rites. Apply after the ceremony. Objections may be filed for 7 days from the date the application is received; registration is completed within 6 calendar months.",
+        "documents": {
+          "photo": "Photograph of each party",
+          "age": "Age proof",
+          "address": "Address proof",
+          "identity": "Identity proof",
+          "priestCeremony": "Priest / ceremony certificate"
+        }
+      },
+      "SMA_13": {
+        "label": "The Special Marriage Act, 1954 — Section 13",
+        "shortLabel": "Special Marriage Act s.13",
+        "summary": "For a marriage to be solemnised before the Marriage Officer. A notice of intended marriage is published for 30 days; the marriage is then solemnised and registered within 3 months of the notice period ending.",
+        "documents": {
+          "photo": "Photograph of each party",
+          "age": "Age proof",
+          "address": "Address proof",
+          "identity": "Identity proof",
+          "affidavit": "Affidavit of marital status"
+        }
+      },
+      "SMA_16": {
+        "label": "The Special Marriage Act, 1954 — Section 16",
+        "shortLabel": "Special Marriage Act s.16",
+        "summary": "For registering a marriage already solemnised in another form. The application may be made no earlier than 30 days after the marriage. Objections may be filed for 30 days; registration is completed within 6 calendar months.",
+        "documents": {
+          "photo": "Photograph of each party",
+          "age": "Age proof",
+          "address": "Address proof",
+          "identity": "Identity proof",
+          "earlier": "Proof of the earlier ceremony"
+        }
+      },
+      "ICMA_1872": {
+        "label": "The Indian Christian Marriage Act, 1872",
+        "shortLabel": "Indian Christian Marriage Act",
+        "summary": "For Christian marriages solemnised by a licensed minister or Marriage Registrar. Both parties must be 21 or older; where a party is between 18 and 21, guardian consent is required.",
+        "documents": {
+          "photo": "Photograph of each party",
+          "age": "Age proof",
+          "address": "Address proof",
+          "identity": "Identity proof",
+          "guardian": "Guardian consent (if 18–21)"
+        }
+      },
+      "PMDA_1936": {
+        "label": "The Parsi Marriage and Divorce Act, 1936",
+        "shortLabel": "Parsi Marriage & Divorce Act",
+        "summary": "For Parsi marriages solemnised by a priest in the presence of two Parsi witnesses. The certificate signed by the priest is registered with the Registrar.",
+        "documents": {
+          "photo": "Photograph of each party",
+          "age": "Age proof",
+          "address": "Address proof",
+          "identity": "Identity proof",
+          "priest": "Priest's certificate"
+        }
+      }
+    }
+  },
+  "Offices": {
+    "eyebrow": "Directory",
+    "title": "Find a Marriage Officer near you.",
+    "lede": "Search by district, police station, pincode, or the name of the office. Choose an officer who registers marriages under your Act.",
+    "searchLabel": "Search",
+    "searchPlaceholder": "Office name, police station, or pincode",
+    "districtLabel": "District",
+    "allDistricts": "All districts",
+    "actLabel": "Act",
+    "anyAct": "Any Act",
+    "submit": "Search",
+    "loadError": "The directory could not be loaded: {message}",
+    "emptyTitle": "No Marriage Officer matched that search",
+    "emptyBody": "Try a wider search — clear the Act filter, or search by district alone.",
+    "clearFilters": "Clear filters",
+    "resultCount": "{count, plural, =1 {# office found} other {# offices found}}",
+    "policeStation": "PS {name}",
+    "applyToOffice": "Apply to this office"
+  },
+  "Help": {
+    "eyebrow": "Help centre",
+    "title": "Answers before you make the trip.",
+    "lede": "Read the common questions, understand fees, and learn how to raise an objection or correction request.",
+    "readGuide": "Read guide",
+    "askTitle": "Ask a question",
+    "askBody": "Put it in your own words. Answers come from the Acts and the verified office directory, with the sections shown.",
+    "feesTitle": "Fees and payments",
+    "feesBody": "What the registration fee includes and how to pay safely.",
+    "actsTitle": "Acts and notices",
+    "actsBody": "The laws and official notices behind each requirement.",
+    "objectionsTitle": "Corrections and objections",
+    "objectionsBody": "How to report an error or object to a registration record."
+  },
+  "Ask": {
+    "eyebrow": "Help centre",
+    "title": "Ask about marriage registration.",
+    "lede": "Put a question in your own words. Every answer is drawn from the marriage Acts and the verified office directory, and the sections it came from are shown underneath.",
+    "sourcesLabel": "Official online sources",
+    "sourcesNote": "These links stay on government domains only. They are the online records and service pages the help section can point people to when they need to read the rule or start a filing.",
+    "openSource": "Open source",
+    "sources": {
+      "portal": {
+        "title": "MARREG portal",
+        "description": "Official West Bengal marriage registration portal and entry point for online services."
+      },
+      "service": {
+        "title": "Marriage registration service",
+        "description": "West Bengal registration department page describing the online marriage registration process."
+      },
+      "sma": {
+        "title": "Special Marriage Act, 1954",
+        "description": "India Code text of the Act used for Special Marriage registration."
+      },
+      "hma": {
+        "title": "Hindu Marriage Act, 1955",
+        "description": "India Code text of the Act used for Hindu marriage registration."
+      },
+      "eservices": {
+        "title": "West Bengal e-Services",
+        "description": "State portal listing the online application of marriage certificate service."
+      },
+      "academy": {
+        "title": "Judicial Academy notice",
+        "description": "Government notice on compulsory registration under the Hindu Marriage Act, 1955."
+      }
+    }
+  },
+  "Objections": {
+    "eyebrow": "Service",
+    "title": "File an objection.",
+    "lede": "Any person may object to a marriage being registered while its notice period is open. Your objection goes to the Marriage Officer handling the application.",
+    "applicationNumber": "Application number",
+    "applicationNumberHint": "Shown on the published notice.",
+    "objectorName": "Your full name",
+    "objectorContact": "Your contact (phone or email)",
+    "grounds": "Grounds for objection",
+    "groundsPlaceholder": "Set out the legal ground on which you object to this marriage being registered.",
+    "submit": "File objection",
+    "submitting": "Submitting…",
+    "warning": "Objections are examined by the Marriage Officer. Filing a false objection is an offence."
+  },
+  "Auth": {
+    "eyebrow": "Citizen account",
+    "signInTitle": "Sign in to continue.",
+    "signInLede": "Your account keeps your draft applications, uploaded documents, and status updates in one place.",
+    "signUpTitle": "Create your MARREG account.",
+    "signUpLede": "One account covers every marriage registration service — applications, documents, status, and certified copies.",
+    "forgotTitle": "Reset your password.",
+    "forgotLede": "We will email you a link to set a new password.",
+    "newPasswordTitle": "Choose a new password.",
+    "emailLabel": "Email address",
+    "passwordLabel": "Password",
+    "fullNameLabel": "Full name",
+    "fullNameHint": "As it appears on your identity documents.",
+    "passwordHint": "At least 8 characters.",
+    "newPasswordLabel": "New password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in…",
+    "createAccount": "Create account",
+    "creatingAccount": "Creating account…",
+    "sendResetLink": "Send reset link",
+    "sending": "Sending…",
+    "updatePassword": "Update password",
+    "saving": "Saving…",
+    "or": "or",
+    "continueWithGoogle": "Continue with Google",
+    "forgotten": "Forgotten your password?",
+    "createAccountLink": "Create an account",
+    "alreadyRegistered": "Already registered?",
+    "otpHeading": "Sign in with a code",
+    "otpBody": "We will email you a six-digit code. You do not need a password.",
+    "otpSend": "Email me a code",
+    "otpCodeHeading": "Enter your code",
+    "otpCodeLabel": "Six-digit code",
+    "otpSentTo": "Sent to {email}.",
+    "otpChecking": "Checking…",
+    "otpResend": "Send another code"
+  },
+  "Track": {
+    "applicationNumber": "Application number",
+    "applicationNumberHint": "Printed on your acknowledgement receipt.",
+    "dateOfBirth": "Date of birth of either applicant",
+    "dateOfBirthHint": "Used only to confirm that this application is yours.",
+    "submit": "View application status",
+    "checking": "Checking…",
+    "lastUpdated": "last updated {when}",
+    "currentStep": "Current step",
+    "officerNote": "Note from the office:",
+    "marriageOfficer": "Marriage Officer",
+    "submitted": "Submitted",
+    "objectionEnds": "Objection period ends",
+    "daysLeft": "{days} days left",
+    "registrationDeadline": "Registration deadline",
+    "checkAnother": "Check another application"
+  },
+  "ApplicationStatus": {
+    "label": {
+      "DRAFT": "Draft",
+      "PAYMENT_PENDING": "Payment pending",
+      "SUBMITTED": "Submitted",
+      "UNDER_SCRUTINY": "Under scrutiny",
+      "AWAITING_APPLICANT_FIX": "Correction needed",
+      "NOTICE_PUBLISHED": "Notice published",
+      "OBJECTION_UNDER_ENQUIRY": "Objection under enquiry",
+      "AWAITING_REGISTRATION": "Awaiting registration",
+      "REGISTERED": "Registered",
+      "CERTIFICATE_ISSUED": "Certificate issued",
+      "CORRECTION_PENDING": "Correction pending",
+      "CANCELLED": "Cancelled",
+      "LAPSED": "Lapsed"
+    },
+    "guidance": {
+      "DRAFT": "You have not submitted this application yet. Continue where you left off.",
+      "PAYMENT_PENDING": "Complete the fee payment to submit your application.",
+      "SUBMITTED": "We have received your application. A Marriage Officer will be assigned shortly.",
+      "UNDER_SCRUTINY": "The Marriage Officer is checking your documents. No action is needed from you.",
+      "AWAITING_APPLICANT_FIX": "The office has asked for a correction. Open the application to see what is needed.",
+      "NOTICE_PUBLISHED": "Your notice is published. The objection period is running.",
+      "OBJECTION_UNDER_ENQUIRY": "An objection has been filed and is being examined by the office.",
+      "AWAITING_REGISTRATION": "The objection period has closed. Your registration appointment will be confirmed.",
+      "REGISTERED": "Your marriage is registered. The certificate will be issued shortly.",
+      "CERTIFICATE_ISSUED": "Your certificate has been issued. You may download a certified copy.",
+      "CORRECTION_PENDING": "A correction to your certificate is being processed.",
+      "CANCELLED": "This application was cancelled. See the note from the office for the reason.",
+      "LAPSED": "This application lapsed because the registration deadline passed."
+    }
+  },
+  "Account": {
+    "eyebrow": "My account",
+    "welcome": "Welcome, {name}.",
+    "fallbackTitle": "My applications",
+    "lede": "Every application you have started, with its current step and what happens next.",
+    "emptyTitle": "You have no applications yet",
+    "emptyBody": "Start an application and we will guide you through each step — applicants, marriage details, witnesses, documents, and submission.",
+    "startApplication": "Start an application",
+    "unsubmittedDraft": "Unsubmitted draft",
+    "lastUpdated": "Last updated {when}",
+    "viewDetails": "View details",
+    "continue": "Continue",
+    "startAnother": "Start another application",
+    "changePassword": "Change password"
+  },
+  "Assistant": {
+    "disclaimer": "This assistant answers only from the marriage Acts and the office directory that registry staff have verified. It cannot decide your case, and it is not legal advice. Only the Marriage Officer can decide whether a marriage may be registered.",
+    "searching": "Searching the approved sources…",
+    "genericError": "Something went wrong. Try again.",
+    "networkError": "Could not reach the assistant. Check your connection.",
+    "questionLabel": "Your question",
+    "questionPlaceholder": "e.g. How many days after the notice can we marry?",
+    "actLabel": "Act (optional)",
+    "actHint": "Narrows the answer to one law. Leave blank to search all of them.",
+    "allActs": "All Acts",
+    "ask": "Ask",
+    "asking": "Searching…",
+    "tryAsking": "Try asking",
+    "sources": "Sources",
+    "page": ", page {page}",
+    "readRecord": "Read the full record",
+    "suggestions": {
+      "documents": "What documents do I need for registration?",
+      "notice": "How long is the notice period under the Special Marriage Act?",
+      "witnesses": "How many witnesses must attend?",
+      "objection": "Who can object to a marriage, and when?"
+    },
+    "nextStep": {
+      "status": "Check application status",
+      "offices": "Find a marriage office",
+      "acts": "See requirements and apply",
+      "fees": "View fees and payments",
+      "objections": "Open corrections and objections",
+      "help": "Browse registration guidance"
+    }
+  },
+  "Rating": {
+    "ariaStars": "{average} out of 5 stars",
+    "summary": "{average} · {count, plural, =1 {# rating} other {# ratings}}",
+    "none": "No ratings yet",
+    "rateThis": "Rate this office",
+    "stars": "{value} stars",
+    "submit": "Submit"
+  },
+  "Landing": {
+    "openChatbot": "Open the marriage registration chatbot",
+    "lovebirdsAlt": "Two lovebirds sitting together",
+    "clickToAsk": "Click to ask a question",
+    "dialogLabel": "Marriage registration chatbot",
+    "heading": "Ask about registration",
+    "close": "Close chatbot"
+  },
+  "RootLanding": {
+    "eyebrow": "MARREG · West Bengal",
+    "title": "How can we help with your marriage registration?",
+    "lede": "Ask a question in your own words. The assistant will explain the approved information and guide you to the right service."
+  },
+  "FloatingAssistant": {
+    "eyebrow": "MARREG assistant",
+    "heading": "Ask about registration",
+    "close": "Close registry assistant",
+    "open": "Open registry assistant",
+    "closeShort": "Close assistant",
+    "askShort": "Ask the registry assistant"
   }
 }

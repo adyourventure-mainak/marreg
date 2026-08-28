@@ -1,17 +1,21 @@
 "use client";
 
 import { useActionState } from "react";
+import { useTranslations } from "next-intl";
 import { trackApplication, type TrackState } from "../app/actions/applications";
 import { Alert, Button, Field } from "./ui";
 import { StatusBadge } from "./ui";
 import { ACTS } from "../lib/acts";
 import { formatDate, formatDateTime, daysUntil } from "../lib/format";
-import { JOURNEY, STATUS_GUIDANCE, STATUS_LABELS, type ApplicationStatus } from "../lib/types";
+import { JOURNEY, type ApplicationStatus } from "../lib/types";
 
 const initial: TrackState = { ok: false };
 
 export function TrackForm() {
   const [state, action, pending] = useActionState(trackApplication, initial);
+  const t = useTranslations("Track");
+  const ts = useTranslations("ApplicationStatus");
+  const ta = useTranslations("Acts");
 
   if (state.ok && state.result) {
     const r = state.result;
@@ -24,16 +28,16 @@ export function TrackForm() {
         <StatusBadge status={status} />
         <h2 className="mt-5 font-display text-4xl">{r.application_number}</h2>
         <p className="mt-2 text-sm text-[var(--muted)]">
-          {ACTS[r.act_code]?.label} · last updated {formatDateTime(r.updated_at)}
+          {ta(`rules.${r.act_code}.label`)} · {t("lastUpdated", { when: formatDateTime(r.updated_at) })}
         </p>
 
         <div className="my-8 border-l-2 border-saffron pl-5">
-          <p className="text-xs font-bold uppercase tracking-widest text-teal">Current step</p>
-          <p className="mt-2 text-xl font-bold">{STATUS_LABELS[status]}</p>
-          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{STATUS_GUIDANCE[status]}</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-teal">{t("currentStep")}</p>
+          <p className="mt-2 text-xl font-bold">{ts(`label.${status}`)}</p>
+          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{ts(`guidance.${status}`)}</p>
           {r.officer_note && (
             <p className="mt-3 border border-rule bg-paper p-3 text-sm leading-6">
-              <strong>Note from the office:</strong> {r.officer_note}
+              <strong>{t("officerNote")}</strong> {r.officer_note}
             </p>
           )}
         </div>
@@ -49,27 +53,27 @@ export function TrackForm() {
                 >
                   {i < stepIndex ? "✓" : i + 1}
                 </span>
-                <span className={i <= stepIndex ? "font-bold" : "text-[var(--muted)]"}>{STATUS_LABELS[s]}</span>
+                <span className={i <= stepIndex ? "font-bold" : "text-[var(--muted)]"}>{ts(`label.${s}`)}</span>
               </li>
             ))}
           </ol>
         )}
 
         <dl className="grid gap-3 border-t border-rule pt-5 text-sm sm:grid-cols-2">
-          <div><dt className="font-bold">Marriage Officer</dt><dd className="text-[var(--muted)]">{r.office_name ?? "—"}</dd></div>
-          <div><dt className="font-bold">Submitted</dt><dd className="text-[var(--muted)]">{formatDate(r.submitted_at)}</dd></div>
+          <div><dt className="font-bold">{t("marriageOfficer")}</dt><dd className="text-[var(--muted)]">{r.office_name ?? "—"}</dd></div>
+          <div><dt className="font-bold">{t("submitted")}</dt><dd className="text-[var(--muted)]">{formatDate(r.submitted_at)}</dd></div>
           <div>
-            <dt className="font-bold">Objection period ends</dt>
+            <dt className="font-bold">{t("objectionEnds")}</dt>
             <dd className="text-[var(--muted)]">
               {formatDate(r.objection_window_ends_at)}
-              {objectionDays !== null && objectionDays > 0 ? ` · ${objectionDays} days left` : ""}
+              {objectionDays !== null && objectionDays > 0 ? ` · ${t("daysLeft", { days: objectionDays })}` : ""}
             </dd>
           </div>
-          <div><dt className="font-bold">Registration deadline</dt><dd className="text-[var(--muted)]">{formatDate(r.registration_deadline_at)}</dd></div>
+          <div><dt className="font-bold">{t("registrationDeadline")}</dt><dd className="text-[var(--muted)]">{formatDate(r.registration_deadline_at)}</dd></div>
         </dl>
 
         <form action={action} className="mt-7 border-t border-rule pt-5">
-          <button className="focus border-b-2 border-saffron pb-1 text-sm font-bold text-teal">Check another application</button>
+          <button className="focus border-b-2 border-saffron pb-1 text-sm font-bold text-teal">{t("checkAnother")}</button>
         </form>
       </div>
     );
@@ -79,21 +83,21 @@ export function TrackForm() {
     <div className="mt-10 max-w-xl border border-rule bg-surface p-7 shadow-[0_12px_28px_rgba(23,33,31,.08)]">
       <form action={action} className="space-y-5">
         <Field
-          label="Application number"
+          label={t("applicationNumber")}
           name="application_number"
           required
           placeholder="MR-2026-000000"
-          hint="Printed on your acknowledgement receipt."
+          hint={t("applicationNumberHint")}
         />
         <Field
-          label="Date of birth of either applicant"
+          label={t("dateOfBirth")}
           name="date_of_birth"
           type="date"
           required
-          hint="Used only to confirm that this application is yours."
+          hint={t("dateOfBirthHint")}
         />
         {state.error && <Alert>{state.error}</Alert>}
-        <Button disabled={pending}>{pending ? "Checking…" : "View application status"}</Button>
+        <Button disabled={pending}>{pending ? t("checking") : t("submit")}</Button>
       </form>
     </div>
   );

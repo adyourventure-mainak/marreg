@@ -82,7 +82,7 @@ export async function Footer({ locale = "en" }: { locale?: string }) {
             {t("blurb")}
           </p>
           <Link href={`/${locale}`} className="focus mt-5 inline-block border-b border-white/70 pb-1 text-sm font-bold">
-            Home →
+            {t("home")} <span aria-hidden="true">→</span>
           </Link>
         </div>
         <div>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { STATUS_LABELS, STATUS_TONE, type ApplicationStatus } from "../lib/types";
+import { useTranslations } from "next-intl";
+import { STATUS_TONE, type ApplicationStatus } from "../lib/types";
 
 const TONE_CLASS: Record<string, string> = {
   neutral: "bg-[var(--rule)] text-ink",
@@ -11,9 +12,13 @@ const TONE_CLASS: Record<string, string> = {
 };
 
 export function StatusBadge({ status }: { status: ApplicationStatus }) {
+  // `useTranslations` resolves in both server and client components, and this
+  // badge is rendered from both, so the status reads in the page's language
+  // wherever it appears.
+  const t = useTranslations("ApplicationStatus");
   return (
     <span className={`inline-block rounded-full px-3 py-1 text-xs font-bold uppercase tracking-widest ${TONE_CLASS[STATUS_TONE[status]]}`}>
-      {STATUS_LABELS[status]}
+      {t(`label.${status}`)}
     </span>
   );
 }
