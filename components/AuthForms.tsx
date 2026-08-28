@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   signIn, signUp, requestPasswordReset, updatePassword,
   requestEmailOtp, verifyEmailOtp,
+  signInWithGoogle,
   type AuthState, type OtpState,
 } from "../app/actions/auth";
 import { Alert, Button, Field } from "./ui";
@@ -12,12 +14,13 @@ import { Alert, Button, Field } from "./ui";
 const initial: AuthState = { ok: false };
 
 function Google({ next }: { next: string }) {
+  const t = useTranslations("Auth");
   return (
     <>
       <div className="my-6 flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-[var(--muted)]">
-        <span className="h-px flex-1 bg-[var(--rule)]" /> or <span className="h-px flex-1 bg-[var(--rule)]" />
+        <span className="h-px flex-1 bg-[var(--rule)]" /> {t("or")} <span className="h-px flex-1 bg-[var(--rule)]" />
       </div>
-      <form action="/api/auth/google" method="post">
+      <form action={signInWithGoogle}>
         <input type="hidden" name="next" value={next} />
         <button className="focus flex min-h-12 w-full items-center justify-center gap-3 border border-rule bg-paper px-5 text-sm font-bold">
           <svg viewBox="0 0 48 48" className="h-5 w-5" aria-hidden="true">
@@ -26,7 +29,7 @@ function Google({ next }: { next: string }) {
             <path fill="#FBBC05" d="M11.5 28.3c-.5-1.4-.7-2.8-.7-4.3s.3-3 .7-4.3l-7.1-5.5C2.9 17.1 2 20.4 2 24s.9 6.9 2.4 9.8l7.1-5.5z"/>
             <path fill="#EA4335" d="M24 9.5c3.3 0 5.5 1.4 6.8 2.6l5.9-5.8C33 2.9 29.9 1 24 1 15.5 1 8.1 6 4.4 14.2l7.1 5.5C13.3 14.4 18.2 9.5 24 9.5z"/>
           </svg>
-          Continue with Google
+          {t("continueWithGoogle")}
         </button>
       </form>
     </>
@@ -44,6 +47,7 @@ const otpInitial: OtpState = { ok: false };
  * citizen back to the beginning.
  */
 export function EmailOtpForm({ next }: { next: string }) {
+  const t = useTranslations("Auth");
   const [request, requestAction, requesting] = useActionState(requestEmailOtp, otpInitial);
   const [verify, verifyAction, verifying] = useActionState(verifyEmailOtp, otpInitial);
 
@@ -53,14 +57,12 @@ export function EmailOtpForm({ next }: { next: string }) {
   if (!atCodeStep) {
     return (
       <div className="mt-10 max-w-md border border-rule bg-surface p-7">
-        <h2 className="text-2xl">Sign in with a code</h2>
-        <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-          We will email you a six-digit code. You do not need a password.
-        </p>
+        <h2 className="text-2xl">{t("otpHeading")}</h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{t("otpBody")}</p>
         <form action={requestAction} className="mt-5 space-y-5">
-          <Field label="Email address" name="email" type="email" required autoComplete="email" />
+          <Field label={t("emailLabel")} name="email" type="email" required autoComplete="email" />
           {request.error && <Alert>{request.error}</Alert>}
-          <Button disabled={requesting}>{requesting ? "Sending…" : "Email me a code"}</Button>
+          <Button disabled={requesting}>{requesting ? t("sending") : t("otpSend")}</Button>
         </form>
       </div>
     );
@@ -68,7 +70,7 @@ export function EmailOtpForm({ next }: { next: string }) {
 
   return (
     <div className="mt-10 max-w-md border border-rule bg-surface p-7">
-      <h2 className="text-2xl">Enter your code</h2>
+      <h2 className="text-2xl">{t("otpCodeHeading")}</h2>
       {request.message && !verify.error && (
         <div className="mt-4"><Alert tone="success">{request.message}</Alert></div>
       )}
@@ -76,22 +78,22 @@ export function EmailOtpForm({ next }: { next: string }) {
         <input type="hidden" name="next" value={next} />
         <input type="hidden" name="email" value={email} />
         <Field
-          label="Six-digit code"
+          label={t("otpCodeLabel")}
           name="token"
           required
           inputMode="numeric"
           autoComplete="one-time-code"
           placeholder="000000"
           maxLength={6}
-          hint={`Sent to ${email}.`}
+          hint={t("otpSentTo", { email })}
         />
         {verify.error && <Alert>{verify.error}</Alert>}
-        <Button disabled={verifying}>{verifying ? "Checking…" : "Sign in"}</Button>
+        <Button disabled={verifying}>{verifying ? t("otpChecking") : t("signIn")}</Button>
       </form>
       <form action={requestAction} className="mt-4">
         <input type="hidden" name="email" value={email} />
         <button className="focus text-sm font-bold text-teal underline" disabled={requesting}>
-          {requesting ? "Sending…" : "Send another code"}
+          {requesting ? t("sending") : t("otpResend")}
         </button>
       </form>
     </div>
@@ -100,21 +102,25 @@ export function EmailOtpForm({ next }: { next: string }) {
 
 export function SignInForm({ next, notice }: { next: string; notice?: string }) {
   const [state, action, pending] = useActionState(signIn, initial);
+  const t = useTranslations("Auth");
+  // These links used to be hardcoded to /en, which dropped a citizen reading
+  // the Bengali site back into English mid sign-in.
+  const locale = useLocale();
   return (
     <div className="mt-10 max-w-md border border-rule bg-surface p-7">
       {notice && <Alert tone="error">{notice}</Alert>}
       <form action={action} className="space-y-5">
         <input type="hidden" name="next" value={next} />
-        <Field label="Email address" name="email" type="email" required />
-        <Field label="Password" name="password" type="password" required />
+        <Field label={t("emailLabel")} name="email" type="email" required />
+        <Field label={t("passwordLabel")} name="password" type="password" required />
         {state.error && <Alert>{state.error}</Alert>}
-        <Button disabled={pending}>{pending ? "Signing in…" : "Sign in"}</Button>
+        <Button disabled={pending}>{pending ? t("signingIn") : t("signIn")}</Button>
       </form>
       <Google next={next} />
       <p className="mt-6 text-sm text-[var(--muted)]">
-        <Link className="focus font-bold text-teal underline" href="/en/forgot-password">Forgotten your password?</Link>
+        <Link className="focus font-bold text-teal underline" href={`/${locale}/forgot-password`}>{t("forgotten")}</Link>
         <span className="mx-2">·</span>
-        <Link className="focus font-bold text-teal underline" href="/en/signup">Create an account</Link>
+        <Link className="focus font-bold text-teal underline" href={`/${locale}/signup`}>{t("createAccountLink")}</Link>
       </p>
     </div>
   );
@@ -122,6 +128,8 @@ export function SignInForm({ next, notice }: { next: string; notice?: string }) 
 
 export function SignUpForm() {
   const [state, action, pending] = useActionState(signUp, initial);
+  const t = useTranslations("Auth");
+  const locale = useLocale();
   return (
     <div className="mt-10 max-w-md border border-rule bg-surface p-7">
       {state.ok ? (
@@ -129,17 +137,18 @@ export function SignUpForm() {
       ) : (
         <>
           <form action={action} className="space-y-5">
-            <Field label="Full name" name="full_name" required hint="As it appears on your identity documents." />
-            <Field label="Email address" name="email" type="email" required />
-            <Field label="Password" name="password" type="password" required hint="At least 8 characters." />
+            <Field label={t("fullNameLabel")} name="full_name" required hint={t("fullNameHint")} />
+            <Field label={t("emailLabel")} name="email" type="email" required />
+            <Field label={t("passwordLabel")} name="password" type="password" required hint={t("passwordHint")} />
             {state.error && <Alert>{state.error}</Alert>}
-            <Button disabled={pending}>{pending ? "Creating account…" : "Create account"}</Button>
+            <Button disabled={pending}>{pending ? t("creatingAccount") : t("createAccount")}</Button>
           </form>
-          <Google next="/en/account" />
+          <Google next={`/${locale}/account`} />
         </>
       )}
       <p className="mt-6 text-sm text-[var(--muted)]">
-        Already registered? <Link className="focus font-bold text-teal underline" href="/en/login">Sign in</Link>
+        {t("alreadyRegistered")}{" "}
+        <Link className="focus font-bold text-teal underline" href={`/${locale}/login`}>{t("signIn")}</Link>
       </p>
     </div>
   );
@@ -147,13 +156,14 @@ export function SignUpForm() {
 
 export function ForgotPasswordForm() {
   const [state, action, pending] = useActionState(requestPasswordReset, initial);
+  const t = useTranslations("Auth");
   return (
     <div className="mt-10 max-w-md border border-rule bg-surface p-7">
       <form action={action} className="space-y-5">
-        <Field label="Email address" name="email" type="email" required />
+        <Field label={t("emailLabel")} name="email" type="email" required />
         {state.error && <Alert>{state.error}</Alert>}
         {state.ok && <Alert tone="success">{state.message}</Alert>}
-        <Button disabled={pending}>{pending ? "Sending…" : "Send reset link"}</Button>
+        <Button disabled={pending}>{pending ? t("sending") : t("sendResetLink")}</Button>
       </form>
     </div>
   );
@@ -161,13 +171,14 @@ export function ForgotPasswordForm() {
 
 export function UpdatePasswordForm() {
   const [state, action, pending] = useActionState(updatePassword, initial);
+  const t = useTranslations("Auth");
   return (
     <div className="mt-10 max-w-md border border-rule bg-surface p-7">
       <form action={action} className="space-y-5">
-        <Field label="New password" name="password" type="password" required hint="At least 8 characters." />
+        <Field label={t("newPasswordLabel")} name="password" type="password" required hint={t("passwordHint")} />
         {state.error && <Alert>{state.error}</Alert>}
         {state.ok && <Alert tone="success">{state.message}</Alert>}
-        <Button disabled={pending}>{pending ? "Saving…" : "Update password"}</Button>
+        <Button disabled={pending}>{pending ? t("saving") : t("updatePassword")}</Button>
       </form>
     </div>
   );
