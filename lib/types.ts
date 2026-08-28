@@ -169,3 +169,18 @@ export type Profile = {
   id: string; email: string | null; full_name: string | null;
   mobile: string | null; role: UserRole; office_id: string | null;
 };
+
+/**
+ * An address an administrator has authorised to hold a staff role. The role is
+ * applied when that person signs up; until then the row is the only record
+ * that the authorisation exists.
+ */
+export type StaffInvitation = {
+  email: string;
+  role: UserRole;
+  office_id: string | null;
+  note: string | null;
+  created_at: string;
+  consumed_at: string | null;
+  revoked_at: string | null;
+};
