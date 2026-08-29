@@ -96,6 +96,61 @@ export function pincodeIn(question: string): string | null {
 }
 
 /**
+ * Words that describe the *act* of looking for an office, not the place.
+ *
+ * search_offices matches p_query as a substring against the office's own
+ * fields, so these can never appear in one: no address contains "nearest" and
+ * no officer is called "contact". Feeding them to the search is not merely
+ * useless, it is the reason a question with no district returned nothing.
+ */
+const OFFICE_NOISE = new Set([
+  "office", "offices", "officer", "officers", "registrar", "register", "registry", "registration",
+  "marriage", "near", "nearest", "nearby", "closest", "close", "around", "here",
+  "address", "phone", "number", "contact", "timing", "timings", "hours", "open",
+  "find", "search", "look", "looking", "get", "give", "tell", "show", "know",
+  "district", "location", "place", "area", "list", "details", "detail", "info",
+  "information", "who", "whom", "which", "there", "from", "with", "about",
+]);
+
+/**
+ * The parts of a question that could name a place, an office or an officer.
+ *
+ * Returned as separate terms rather than one string. This is the whole bug the
+ * screenshot showed: searchTerms() OR-joins its words for websearch_to_tsquery,
+ * but search_offices does `ilike '%' || p_query || '%'`, so the joined string
+ * "nearest or officer" was looked up literally and matched no row in the
+ * register — every office question that named no district silently found
+ * nothing and the assistant reported that as an absence of records.
+ */
+export function officeTerms(question: string): string[] {
+  const words = question
+    .toLowerCase()
+    .replace(/[^\p{L}\p{M}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    // Bengali script is dropped: the register is written in English, so a
+    // Bengali token can only ever ILIKE-match nothing. A district named in
+    // Bengali is still recognised — districtCodeIn() matches it against
+    // districts.name_bn and passes a real code instead.
+    .filter((w) => w.length > 2 && !hasBengali(w) && !NOISE.has(w) && !OFFICE_NOISE.has(w));
+  return [...new Set(words)].slice(0, 3);
+}
+
+/**
+ * Does the question depend on where the citizen is, without saying where?
+ *
+ * "Nearest marriage officer" names no district, no PIN and no locality, so
+ * there is nothing to search on. Answering it with "I have no verified office
+ * record" is false: the register holds 587 of them. The honest reply is that
+ * we do not know where they are, which is what NEEDS_LOCATION says — and the
+ * site can then offer to ask the browser.
+ */
+export function needsLocation(question: string): boolean {
+  const proximity = /\b(near|nearest|nearby|closest|close to me|around me|my area)\b/i.test(question)
+    || ["কাছে", "নিকট", "কাছাকাছি"].some((t) => question.includes(t));
+  return proximity && !pincodeIn(question);
+}
+
+/**
  * Resolve a district the citizen named to its code.
  *
  * search_offices matches its free-text argument with a substring ILIKE against
@@ -199,17 +254,36 @@ export async function retrieve(
     const district = districtCodeIn(question, districts ?? []);
     const pincode = pincodeIn(question);
 
-    const { data: offices, error: officeError } = await supabase.rpc("search_offices", {
-      // District/PIN use dedicated filters; otherwise terms support officer or office-name questions.
-      p_query: district || pincode ? null : searchTerms(question),
-      p_district: district,
-      p_act: act,
-      p_police_station: null,
-      p_pincode: pincode,
-    });
-    if (officeError) throw new Error(`search_offices failed: ${officeError.message}`);
+    // A place the citizen named beats a free-text guess, so the query term is
+    // only used when neither filter applies.
+    // Nothing to go on but "near me": searching on the leftover words would
+    // ask the register for offices called "my", so let the near-me flow answer
+    // it instead.
+    const blind = needsLocation(question) && !district && !pincode;
+    const terms = district || pincode || blind ? [] : officeTerms(question);
+    const found = new Map<string, OfficeRow>();
 
-    for (const o of ((offices ?? []) as OfficeRow[]).slice(0, 4)) {
+    // Each term is searched on its own and the results unioned. A single
+    // combined string would AND the words inside one ILIKE, so "Alipurduar
+    // court" would need both to sit adjacent in the same field.
+    const queries = terms.length ? terms : [null];
+    for (const term of queries) {
+      // Nothing to search on at all: no district, no PIN, no place name. Do
+      // not run a query that can only return the whole register.
+      if (term === null && !district && !pincode) break;
+
+      const { data: offices, error: officeError } = await supabase.rpc("search_offices", {
+        p_query: term,
+        p_district: district,
+        p_act: act,
+        p_police_station: null,
+        p_pincode: pincode,
+      });
+      if (officeError) throw new Error(`search_offices failed: ${officeError.message}`);
+      for (const o of (offices ?? []) as OfficeRow[]) if (!found.has(o.id)) found.set(o.id, o);
+    }
+
+    for (const o of [...found.values()].slice(0, 4)) {
       const lines = [
         o.officer_name ? `Officer: ${o.officer_name}` : null,
         o.designation ? `Designation: ${o.designation}` : null,

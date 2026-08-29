@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "../../../lib/supabase/server";
 import { createServiceClient } from "../../../lib/supabase/service";
 import { runAssistantGraph } from "../../../lib/assistant/graph";
+import { needsLocation } from "../../../lib/assistant/retrieve";
 import { NOT_CONFIGURED, UNAVAILABLE } from "../../../lib/assistant/answer";
 import { aiConfigured } from "../../../lib/extraction/provider";
 import { ACT_CODES } from "../../../lib/acts";
@@ -109,7 +110,13 @@ export async function POST(request: Request) {
       actorId: user?.id ?? null,
     });
 
-    return NextResponse.json(answer);
+    // "Nearest office" with no district, no PIN and no locality is not a gap in
+    // the register — it is a gap in what the citizen told us. Say so, and let
+    // the page offer to ask the browser instead.
+    const wantsLocation =
+      needsLocation(question) && !answer.passages.some((p) => p.kind === "OFFICE");
+
+    return NextResponse.json({ ...answer, needsLocation: wantsLocation });
   } catch (error) {
     console.error("assistant failed", error);
     await log({

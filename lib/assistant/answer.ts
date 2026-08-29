@@ -33,7 +33,7 @@ Absolute rules:
 - This service covers India, and West Bengal in particular. If the question is about another country's law, say that you only cover Indian marriage law.
 - Do not ask for or repeat identity numbers, and do not request personal documents.
 
-Style: plain English a person without a lawyer can follow. Short paragraphs. No more than about 180 words. Quote the exact statutory words when a period or a requirement turns on them.
+Style: plain English a person without a lawyer can follow. Write plain text only — no markdown, no asterisks for emphasis, no headings. Square-bracket citations like [2] are the one exception and are required. Short paragraphs. No more than about 180 words. Quote the exact statutory words when a period or a requirement turns on them.
 
 Close with one line telling the person that this is general information and that only the Marriage Officer can decide their case.`;
 
@@ -175,6 +175,26 @@ export function restoreVerbatim(text: string, passages: Passage[]): string {
   return out;
 }
 
+/**
+ * Remove the markdown the model insists on emitting.
+ *
+ * The reply is rendered as plain paragraphs, so a citizen was shown the
+ * literal text **"Find a Marriage Officer"** — asterisks and all — in the
+ * middle of an answer about their nearest office. The prompt now asks for
+ * plain text, but a prompt is a request; this is the control. Only the
+ * emphasis markers and heading hashes are removed, never the words between
+ * them, and never the [n] citations the guards depend on.
+ */
+export function stripMarkdown(text: string): string {
+  return text
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/\*\*\*([\s\S]+?)\*\*\*/g, "$1")
+    .replace(/\*\*([\s\S]+?)\*\*/g, "$1")
+    .replace(/(^|[\s(])\*(?!\s)([\s\S]+?)(?<!\s)\*(?=[\s.,;:!?)]|$)/g, "$1$2")
+    .replace(/(^|[\s(])_(?!\s)([\s\S]+?)(?<!\s)_(?=[\s.,;:!?)]|$)/g, "$1$2")
+    .replace(/^\s{0,3}[-*+]\s+/gm, "• ");
+}
+
 export type ComposeDeps = {
   /** Injected so the guardrails can be tested without a provider. */
   complete(system: string, user: string, signal?: AbortSignal): Promise<string>;
@@ -203,7 +223,12 @@ export async function compose(
     return { answered: false, text: "", passages, refusal: NO_DECISION };
   }
 
-  return { answered: true, text: restoreVerbatim(text, passages), passages, model: AI_ASSISTANT_MODEL };
+  return {
+    answered: true,
+    text: restoreVerbatim(stripMarkdown(text), passages),
+    passages,
+    model: AI_ASSISTANT_MODEL,
+  };
 }
 
 /**

@@ -32,6 +32,14 @@ export type AssistantAnswer = {
   /** Present when the assistant declined; safe to show to a citizen verbatim. */
   refusal?: string;
   model?: string;
+  /**
+   * The question turned on where the citizen is, and they did not say.
+   *
+   * Set so the reply can offer to ask the browser rather than leaving them to
+   * work out that "nearest" was unanswerable. It is not a refusal: the law
+   * passages are still returned and still shown.
+   */
+  needsLocation?: boolean;
 };
 
 export type AssistantRequest = {

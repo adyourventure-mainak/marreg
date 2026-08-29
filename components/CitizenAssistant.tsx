@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { ACT_CODES, type ActCode } from "../lib/acts";
 import type { AssistantAnswer, Passage } from "../lib/assistant/types";
 import { Alert, Field } from "./ui";
+import { NearMeButton } from "./NearMeButton";
 
 /**
  * The citizen assistant.
@@ -142,12 +143,18 @@ export function CitizenAssistant({ locale }: { locale: string }) {
                   ) : (
                     <p className="text-sm leading-7">{turn.answer.refusal}</p>
                   )}
-                  <Link
-                    href={`/${locale}/${pathFor(nextStepKey(turn.question))}`}
-                    className="focus mt-5 inline-flex min-h-11 items-center bg-saffron px-4 text-sm font-bold"
-                  >
-                    {t(`nextStep.${nextStepKey(turn.question)}`)} <span className="ml-2" aria-hidden="true">→</span>
-                  </Link>
+                  <div className="mt-5 flex flex-wrap items-center gap-3">
+                    <Link
+                      href={`/${locale}/${pathFor(nextStepKey(turn.question))}`}
+                      className="focus inline-flex min-h-11 items-center bg-saffron px-4 text-sm font-bold"
+                    >
+                      {t(`nextStep.${nextStepKey(turn.question)}`)} <span className="ml-2" aria-hidden="true">→</span>
+                    </Link>
+                    {/* Asked for the nearest office without saying where they are:
+                        offer the browser's own answer rather than making them
+                        guess which district they should have named. */}
+                    {turn.answer.needsLocation && <NearMeButton locale={locale} />}
+                  </div>
                   <Sources passages={turn.answer.passages} />
                 </>
               )}
