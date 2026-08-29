@@ -70,6 +70,7 @@ export default async function AdminOverviewPage({ params }: { params: Promise<{ 
     >
       <AdminNav locale={locale} current="overview" />
       <p className="mt-5 text-sm"><Link className="font-bold text-teal underline" href={`/${locale}/admin/circulars`}>Publish a citizen circular →</Link></p>
+      <p className="mt-3 text-sm"><Link className="font-bold text-teal underline" href={`/${locale}/admin/transfer-mo`}>Review Change of MO requests →</Link></p>
 
       <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Tile

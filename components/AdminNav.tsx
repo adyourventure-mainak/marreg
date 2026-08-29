@@ -9,6 +9,7 @@ const SECTIONS = [
   { key: "staff",        href: "/staff",        label: "Staff & roles" },
   { key: "applications", href: "/applications", label: "Applications" },
   { key: "objections",   href: "/objections",   label: "Objections" },
+  { key: "transfer-mo",  href: "/transfer-mo",  label: "Change of MO" },
   { key: "knowledge",    href: "/knowledge",    label: "Source documents" },
   { key: "questions",    href: "/questions",    label: "Questions asked" },
   { key: "circulars",    href: "/circulars",    label: "Circulars" },
