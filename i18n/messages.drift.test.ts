@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import en from "../messages/en.json";
 import bn from "../messages/bn.json";
+import { DELIBERATELY_ENGLISH } from "./messages.test";
 import { LOCALES } from "./config";
 
 /** Every leaf key, as dotted paths, so two catalogues can be compared directly. */
@@ -59,6 +60,9 @@ describe("message catalogues", () => {
       .filter(([path, value]) => {
         if (path === "Header.switchTo") return false; // deliberately "English"
         if (path === "Home.badge") return false;      // contains the product name
+        // The office-finding control: English because places are matched in
+        // English and by PIN. See DELIBERATELY_ENGLISH for the argument.
+        if (DELIBERATELY_ENGLISH.has(path)) return false;
         return !bengali.test(String(value));
       })
       .map(([path]) => path);

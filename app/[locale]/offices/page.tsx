@@ -50,12 +50,16 @@ export default async function OfficesPage({
     const values = (ratings ?? []).filter((r) => r.office_id === id).map((r) => r.rating);
     return { count: values.length, average: values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0 };
   };
-  // The directory carries a Bengali name for each district, so a reader on the
-  // Bengali site sees the district in the script the rest of the page is in.
+  // District names stay in English on both sites.
+  //
+  // Finding an office is matched in English and by PIN — those are the two
+  // things the register is written in. Showing a Bengali reader "কলকাতা" while
+  // the search only answers to "Kolkata" teaches them a name that does not
+  // work when they type it into the assistant or the search box beside this.
+  // One name, the register's own, is the honest thing to show.
   const districtName = (code: string) => {
     const d = (districts as District[] | null)?.find((x) => x.code === code);
-    if (!d) return code;
-    return (locale === "bn" ? d.name_bn : null) ?? d.name;
+    return d?.name ?? code;
   };
 
   return (

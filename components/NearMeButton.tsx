@@ -7,6 +7,12 @@ import { useState } from "react";
 /**
  * "Find offices near me".
  *
+ * Deliberately English on the Bengali site too, and the strings in bn.json say
+ * so rather than this component overriding the locale. Places are matched in
+ * English and by PIN, because that is what the register is written in, so the
+ * whole of this control speaks the language the search actually answers to.
+ * The rest of the Bengali site is unaffected.
+ *
  * The permission prompt is only ever raised by a deliberate press — never on
  * page load — because a citizen looking up a marriage office should not have to
  * refuse a location request they did not ask for. Everything still works
