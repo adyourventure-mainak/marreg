@@ -416,7 +416,8 @@
   "RootLanding": {
     "eyebrow": "MARREG · West Bengal",
     "title": "How can we help with your marriage registration?",
-    "lede": "Ask a question in your own words. The assistant will explain the approved information and guide you to the right service."
+    "lede": "Ask a question in your own words. The assistant will explain the approved information and guide you to the right service.",
+    "homeLink": "Explore the full home page"
   },
   "FloatingAssistant": {
     "eyebrow": "MARREG assistant",
