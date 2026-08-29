@@ -174,7 +174,7 @@ export default async function ApplicationDetailPage({
           </aside>
         </div>
       </main>
-      <Footer />
+      <Footer locale={locale} />
     </>
   );
 }

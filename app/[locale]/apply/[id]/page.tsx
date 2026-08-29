@@ -91,7 +91,7 @@ export default async function ApplicationWizardPage({
           </>
         )}
       </main>
-      <Footer />
+      <Footer locale={locale} />
     </>
   );
 }

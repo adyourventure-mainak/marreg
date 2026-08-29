@@ -91,6 +91,16 @@ export async function Footer({ locale = "en" }: { locale?: string }) {
         </div>
         <div className="text-xs uppercase tracking-widest text-white/70">{t("copyright")}</div>
       </div>
+
+      {/*
+        This is a proposal build, not a live citizen service. Saying so in the
+        footer of every page is the honest place for it: a reviewer can see at a
+        glance that nothing here is a running government system, and no citizen
+        who lands on it by accident is left thinking they have filed anything.
+      */}
+      <div className="page mt-8 border-t border-white/25 pt-6">
+        <p className="text-xs text-white/70">{t("demo")}</p>
+      </div>
     </footer>
   );
 }
@@ -107,7 +117,7 @@ export async function Page({
         {lede && <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--muted)]">{lede}</p>}
         {children}
       </main>
-      <Footer />
+      <Footer locale={locale} />
     </>
   );
 }
