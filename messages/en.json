@@ -84,7 +84,7 @@
     "fee": "Fee",
     "allActs": "All Acts",
     "empty": "The fee schedule has not been published yet.",
-    "note": "Fees shown here are drawn from the published schedule held by the Office of the Registrar General of Marriages. Where a gazette reference is marked as pending, the figure has not yet been verified against the current notification.",
+    "note": "Fees shown here are drawn from the published fee schedule. Where a gazette reference is marked as pending, the figure has not yet been verified against the current notification.",
     "purposes": {
       "applicationForRegistration": "Application for registration",
       "certifiedCopyOfCertificate": "Certified copy of certificate",
