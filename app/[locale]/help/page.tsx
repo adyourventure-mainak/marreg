@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Page } from "../../../components/Shell";
+import { VideoGuides } from "../../../components/VideoGuides";
 
 export default async function Help({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -26,6 +27,7 @@ export default async function Help({ params }: { params: Promise<{ locale: strin
           </Link>
         ))}
       </div>
+      <VideoGuides />
     </Page>
   );
 }
