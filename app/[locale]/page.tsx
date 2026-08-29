@@ -2,11 +2,14 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Header, Footer } from "../../components/Shell";
 import { ACT_CODES } from "../../lib/acts";
+import { createClient } from "../../lib/supabase/server";
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations("Home");
   const ta = await getTranslations("Acts");
+  const supabase = await createClient();
+  const { data: circulars } = await supabase.from("circulars").select("id, title, circular_date, file_url").eq("published", true).order("circular_date", { ascending: false }).limit(5);
 
   const actions = [
     { key: "acts", href: `/${locale}/acts` },
@@ -82,6 +85,30 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               </Link>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="page py-16 md:py-24">
+        <p className="text-xs font-bold uppercase tracking-[.18em] text-teal">Citizen services</p>
+        <h2 className="mt-4 text-4xl">What would you like to do?</h2>
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {[
+            ["Track application", "Check your application status and next step.", `/${locale}/status`],
+            ["Transfer of Marriage Officer", "Request a change of Marriage Officer with a reason.", `/${locale}/transfer-mo`],
+            ["File an objection", "Submit an objection against a published notice.", `/${locale}/objections`],
+          ].map(([title, body, href]) => <Link key={href} href={href} className="focus border border-rule bg-surface p-6 transition hover:-translate-y-1 hover:border-teal">
+            <h3 className="text-2xl">{title}</h3><p className="mt-3 text-sm leading-6 text-[var(--muted)]">{body}</p><span className="mt-6 inline-block font-bold text-teal">Open service →</span>
+          </Link>)}
+        </div>
+      </section>
+
+      <section className="border-y border-rule bg-surface">
+        <div className="page py-14">
+          <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-teal">Public notices</p><h2 className="mt-3 text-4xl">Circulars</h2></div><Link className="font-bold text-teal underline" href={`/${locale}/circulars`}>View all →</Link></div>
+          <div className="mt-8 grid gap-3 md:grid-cols-2">
+            {(circulars ?? []).map((c) => <a key={c.id} href={c.file_url} target="_blank" rel="noreferrer" className="focus border border-rule p-5"><p className="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">{c.circular_date}</p><h3 className="mt-2 text-xl">{c.title}</h3><span className="mt-3 inline-block text-sm font-bold text-teal">Open circular →</span></a>)}
+            {!circulars?.length && <p className="text-sm text-[var(--muted)]">New circulars will appear here when published by the administration.</p>}
+          </div>
         </div>
       </section>
 

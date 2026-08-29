@@ -69,6 +69,7 @@ export default async function AdminOverviewPage({ params }: { params: Promise<{ 
       lede="What is waiting on a decision, across the registry."
     >
       <AdminNav locale={locale} current="overview" />
+      <p className="mt-5 text-sm"><Link className="font-bold text-teal underline" href={`/${locale}/admin/circulars`}>Publish a citizen circular →</Link></p>
 
       <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Tile

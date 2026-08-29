@@ -11,6 +11,7 @@ const SECTIONS = [
   { key: "objections",   href: "/objections",   label: "Objections" },
   { key: "knowledge",    href: "/knowledge",    label: "Source documents" },
   { key: "questions",    href: "/questions",    label: "Questions asked" },
+  { key: "circulars",    href: "/circulars",    label: "Circulars" },
   { key: "audit",        href: "/audit",        label: "Audit trail" },
 ] as const;
 
