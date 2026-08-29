@@ -28,6 +28,21 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     <main>
       <Header locale={locale} />
 
+      <section className="border-b border-rule bg-surface">
+        <div className="page py-8">
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-teal">Citizen services</p>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {[
+              ["Track application", "Check your application status and next step.", `/${locale}/status`],
+              ["Transfer of Marriage Officer", "Request a change of Marriage Officer with a reason.", `/${locale}/transfer-mo`],
+              ["File an objection", "Submit an objection against a published notice.", `/${locale}/objections`],
+            ].map(([title, body, href]) => <Link key={href} href={href} className="focus border border-rule bg-paper p-4 transition hover:border-teal">
+              <h2 className="text-xl">{title}</h2><p className="mt-2 text-sm text-[var(--muted)]">{body}</p><span className="mt-3 inline-block text-sm font-bold text-teal">Open service →</span>
+            </Link>)}
+          </div>
+        </div>
+      </section>
+
       <section className="page grid gap-12 py-16 md:grid-cols-[1.05fr_.95fr] md:items-center md:py-24">
         <div>
           <p className="mb-5 text-xs font-bold uppercase tracking-[.18em] text-teal">{t("eyebrow")}</p>
@@ -85,20 +100,6 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               </Link>
             </article>
           ))}
-        </div>
-      </section>
-
-      <section className="page py-16 md:py-24">
-        <p className="text-xs font-bold uppercase tracking-[.18em] text-teal">Citizen services</p>
-        <h2 className="mt-4 text-4xl">What would you like to do?</h2>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {[
-            ["Track application", "Check your application status and next step.", `/${locale}/status`],
-            ["Transfer of Marriage Officer", "Request a change of Marriage Officer with a reason.", `/${locale}/transfer-mo`],
-            ["File an objection", "Submit an objection against a published notice.", `/${locale}/objections`],
-          ].map(([title, body, href]) => <Link key={href} href={href} className="focus border border-rule bg-surface p-6 transition hover:-translate-y-1 hover:border-teal">
-            <h3 className="text-2xl">{title}</h3><p className="mt-3 text-sm leading-6 text-[var(--muted)]">{body}</p><span className="mt-6 inline-block font-bold text-teal">Open service →</span>
-          </Link>)}
         </div>
       </section>
 
