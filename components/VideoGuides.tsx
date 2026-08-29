@@ -6,7 +6,7 @@ const VIDEOS = [
 
 export function VideoGuides() {
   return (
-    <section className="mt-12 border border-rule bg-surface p-6 md:p-8">
+    <section id="video-guides" className="mt-12 border border-rule bg-surface p-6 md:p-8">
       <p className="text-xs font-bold uppercase tracking-[.18em] text-teal">Video guides</p>
       <h2 className="mt-3 text-3xl">See how the process works.</h2>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">

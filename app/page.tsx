@@ -32,6 +32,9 @@ export default async function RootPage() {
           <h1 className="mt-5 max-w-3xl text-5xl leading-[.98] md:text-7xl">{t("title")}</h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--muted)]">{t("lede")}</p>
           <LandingChat locale={DEFAULT_LOCALE} />
+          <Link href={`/${DEFAULT_LOCALE}/help#video-guides`} className="focus mt-8 inline-flex min-h-12 items-center border border-teal px-5 text-sm font-bold text-teal transition hover:bg-teal-tint">
+            Watch video guides <span className="ml-2" aria-hidden="true">▶</span>
+          </Link>
         </section>
         <Footer locale={DEFAULT_LOCALE} />
       </main>
