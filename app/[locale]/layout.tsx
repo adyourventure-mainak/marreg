@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { LOCALES, isLocale } from "../../i18n/config";
+import { FloatingAssistant } from "../../components/FloatingAssistant";
 
 export function generateStaticParams() {
   return LOCALES.map((locale) => ({ locale }));
@@ -26,6 +27,7 @@ export default async function LocaleLayout({
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       {children}
+      <FloatingAssistant locale={locale} />
     </NextIntlClientProvider>
   );
 }

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Header, Footer } from "../../components/Shell";
-import { FloatingAssistant } from "../../components/FloatingAssistant";
 import { ACT_CODES } from "../../lib/acts";
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
@@ -70,8 +69,6 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           </div>
         </div>
       </section>
-
-      <FloatingAssistant locale={locale} />
 
       <section className="border-y border-rule bg-surface">
         <div className="page grid gap-0 md:grid-cols-3">
