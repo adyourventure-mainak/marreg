@@ -1,6 +1,5 @@
 {
   "Header": {
-    "government": "Government of West Bengal · Law Department",
     "switchTo": "বাংলা",
     "organisation": "Registrar General of Marriages",
     "acts": "Acts & rules",
@@ -16,7 +15,7 @@
     "administration": "Administration"
   },
   "Footer": {
-    "blurb": "Online marriage registration services of the Office of the Registrar General of Marriages, Government of West Bengal.",
+    "blurb": "Online marriage registration services — apply, track your application and find your Marriage Officer.",
     "supportLabel": "Citizen support",
     "supportHeading": "Contact the RGM office",
     "home": "Home",

@@ -16,8 +16,11 @@ export async function Header({ locale = "en" }: { locale?: string }) {
   return (
     <>
       <div className="bg-marreg-pink text-xs font-bold uppercase tracking-[.12em] text-white">
-        <div className="page flex justify-between py-2">
-          <span>{t("government")}</span>
+        {/* The government/department line that sat on the left of this strip
+            is gone: this is a proposal build, and naming a department as its
+            publisher was a claim it could not make. The strip stays because
+            the language switch lives in it. */}
+        <div className="page flex justify-end py-2">
           <Link className="focus" href={locale === "bn" ? "/en" : "/bn"}>
             {t("switchTo")}
           </Link>
