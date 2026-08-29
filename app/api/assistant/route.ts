@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createClient } from "../../../lib/supabase/server";
 import { createServiceClient } from "../../../lib/supabase/service";
 import { runAssistantGraph } from "../../../lib/assistant/graph";
-import { needsLocation } from "../../../lib/assistant/retrieve";
+import { asksAboutOffice, needsLocation, pincodeIn } from "../../../lib/assistant/retrieve";
 import { NOT_CONFIGURED, UNAVAILABLE } from "../../../lib/assistant/answer";
 import { aiConfigured } from "../../../lib/extraction/provider";
 import { ACT_CODES } from "../../../lib/acts";
@@ -113,8 +113,15 @@ export async function POST(request: Request) {
     // "Nearest office" with no district, no PIN and no locality is not a gap in
     // the register — it is a gap in what the citizen told us. Say so, and let
     // the page offer to ask the browser instead.
+    //
+    // The second half of this covers the Bengali reader. Place names are
+    // matched in English and by PIN only, so a district written in Bengali
+    // resolves to nothing and the search finds nothing — which would leave
+    // them with no offices and no way forward. Offering to ask the browser
+    // turns that dead end into a PIN, which the register does hold.
+    const foundOffice = answer.passages.some((p) => p.kind === "OFFICE");
     const wantsLocation =
-      needsLocation(question) && !answer.passages.some((p) => p.kind === "OFFICE");
+      !foundOffice && !pincodeIn(question) && (needsLocation(question) || asksAboutOffice(question));
 
     return NextResponse.json({ ...answer, needsLocation: wantsLocation });
   } catch (error) {

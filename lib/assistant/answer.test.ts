@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { compose, citesOnly, decidesTheCase, restoreVerbatim, NO_SOURCE, NO_DECISION, UNAVAILABLE } from "./answer";
-import { searchTerms, asksAboutOffice, districtCodeIn, pincodeIn } from "./retrieve";
+import { searchTerms, asksAboutOffice, districtCodeIn, pincodeIn, needsLocation } from "./retrieve";
 import type { Passage } from "./types";
 
 const passage: Passage = {
@@ -174,8 +174,8 @@ describe("districtCodeIn", () => {
     expect(districtCodeIn("Where is the marriage office in Alipurduar?", DISTRICTS)).toBe("WB-ALP");
   });
 
-  it("resolves a district named in Bengali", () => {
-    expect(districtCodeIn("আলিপুরদুয়ার জেলার বিবাহ দপ্তর কোথায়?", DISTRICTS)).toBe("WB-ALP");
+  it("ignores a district named in Bengali, matching English and PIN only", () => {
+    expect(districtCodeIn("আলিপুরদুয়ার জেলার বিবাহ দপ্তর কোথায়?", DISTRICTS)).toBeNull();
   });
 
   it("prefers the longer name, so a multi-word district is not lost", () => {
@@ -263,9 +263,21 @@ describe("Bengali questions reach the office directory", () => {
     expect(asksAboutOffice("কলকাতার বিবাহ নিবন্ধকের ঠিকানা")).toBe(true);
   });
 
-  it("still resolves the district from its Bengali name", () => {
-    expect(districtCodeIn("পুরুলিয়া জেলার বিবাহ নিবন্ধক কে?", districts)).toBe("WB-PUR");
-    expect(districtCodeIn("কলকাতার বিবাহ নিবন্ধকের ঠিকানা", districts)).toBe("WB-KOL");
+  it("does not resolve a district from its Bengali name", () => {
+    // Place matching is English and PIN only. Bengali reached the 23 district
+    // names and nothing below them, so a town like বারাসাত failed anyway while
+    // looking supported. A Bengali reader gets the near-me button instead,
+    // which answers with a PIN the register does hold.
+    expect(districtCodeIn("পুরুলিয়া জেলার বিবাহ নিবন্ধক কে?", districts)).toBeNull();
+    expect(districtCodeIn("কলকাতার বিবাহ নিবন্ধকের ঠিকানা", districts)).toBeNull();
+  });
+
+  it("routes a Bengali proximity question to the near-me flow", () => {
+    expect(needsLocation("আমার কাছে বিবাহ নিবন্ধন অফিস কোথায়?")).toBe(true);
+  });
+
+  it("still resolves an English district name written in a Bengali question", () => {
+    expect(districtCodeIn("Purulia জেলার বিবাহ নিবন্ধক কে?", districts)).toBe("WB-PUR");
   });
 
   it("does not treat an unrelated Bengali sentence as an office question", () => {

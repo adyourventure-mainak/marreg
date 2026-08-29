@@ -128,9 +128,8 @@ export function officeTerms(question: string): string[] {
     .replace(/[^\p{L}\p{M}\p{N}\s]/gu, " ")
     .split(/\s+/)
     // Bengali script is dropped: the register is written in English, so a
-    // Bengali token can only ever ILIKE-match nothing. A district named in
-    // Bengali is still recognised — districtCodeIn() matches it against
-    // districts.name_bn and passes a real code instead.
+    // Bengali token can only ever ILIKE-match nothing. Place matching is
+    // English and PIN only -- see districtCodeIn().
     .filter((w) => w.length > 2 && !hasBengali(w) && !NOISE.has(w) && !OFFICE_NOISE.has(w));
   return [...new Set(words)].slice(0, 3);
 }
@@ -160,20 +159,27 @@ export function needsLocation(question: string): boolean {
  * district retrieved no office at all.
  *
  * So the district is resolved to its code first and passed as a real filter.
- * Matching is on the names in the districts table, English and Bengali, rather
- * than on a list written here, so a district cannot be recognised under a name
- * the register does not use.
+ * Matching is on the names in the districts table rather than on a list
+ * written here, so a district cannot be recognised under a name the register
+ * does not use.
+ *
+ * English names only, by decision. Bengali matching covered the 23 districts
+ * and nothing below them, so a Bengali reader naming a town -- বারাসাত, which
+ * sits in North 24 Parganas and is not a district in any language -- got the
+ * same silence as before while appearing to be supported. Place matching is
+ * now one rule in one script: English names and PIN codes, which is what the
+ * register actually holds. A Bengali question still reaches the directory and
+ * still gets the near-me button, which answers with a PIN.
  */
 export function districtCodeIn(
   question: string,
-  districts: { code: string; name: string; name_bn: string | null }[],
+  districts: { code: string; name: string }[],
 ): string | null {
   const haystack = question.toLowerCase();
   // Longest name first, so "North 24 Parganas" wins over a shorter substring.
   const sorted = [...districts].sort((a, b) => b.name.length - a.name.length);
   for (const d of sorted) {
     if (haystack.includes(d.name.toLowerCase())) return d.code;
-    if (d.name_bn && question.includes(d.name_bn)) return d.code;
   }
   return null;
 }
@@ -250,7 +256,7 @@ export async function retrieve(
   if (passages.length === 0) passages.push(...await searchOfficialSources(question, locale));
 
   if (asksAboutOffice(question)) {
-    const { data: districts } = await supabase.from("districts").select("code, name, name_bn");
+    const { data: districts } = await supabase.from("districts").select("code, name");
     const district = districtCodeIn(question, districts ?? []);
     const pincode = pincodeIn(question);
 
