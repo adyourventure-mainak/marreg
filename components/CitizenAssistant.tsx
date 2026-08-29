@@ -49,6 +49,15 @@ export function nextStepKey(question: string): string {
 
 const pathFor = (key: string) => ROUTES.find((r) => r.key === key)?.path ?? "help";
 
+const videoQueryFor = (key: string) => ({
+  status: "marriage registration application status West Bengal",
+  offices: "how to find marriage registration office West Bengal",
+  acts: "West Bengal marriage registration form fill up documents",
+  fees: "West Bengal marriage registration fees payment",
+  objections: "marriage certificate correction objection India",
+  help: "West Bengal marriage registration procedure",
+}[key] ?? "West Bengal marriage registration procedure");
+
 function Sources({ passages }: { passages: Passage[] }) {
   const t = useTranslations("Assistant");
   if (!passages.length) return null;
@@ -154,6 +163,14 @@ export function CitizenAssistant({ locale }: { locale: string }) {
                         offer the browser's own answer rather than making them
                         guess which district they should have named. */}
                     {turn.answer.needsLocation && <NearMeButton locale={locale} />}
+                    <a
+                      href={`https://www.youtube.com/results?search_query=${encodeURIComponent(videoQueryFor(nextStepKey(turn.question)))}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="focus inline-flex min-h-11 items-center border border-teal px-4 text-sm font-bold text-teal"
+                    >
+                      {t("watchVideos")} <span className="ml-2" aria-hidden="true">▶</span>
+                    </a>
                   </div>
                   <Sources passages={turn.answer.passages} />
                 </>
