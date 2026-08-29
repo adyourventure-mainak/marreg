@@ -6,6 +6,7 @@ import { createClient } from "../../../lib/supabase/server";
 import { ACTS, type ActCode } from "../../../lib/acts";
 import type { District, Office } from "../../../lib/types";
 import { OfficeRating } from "../../../components/OfficeRating";
+import { NearMeButton } from "../../../components/NearMeButton";
 
 export const dynamic = "force-dynamic";
 
@@ -13,34 +14,52 @@ export default async function OfficesPage({
   params, searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ q?: string; district?: string; act?: string }>;
+  searchParams: Promise<{ q?: string; district?: string; act?: string; pincode?: string }>;
 }) {
   const { locale } = await params;
-  const { q = "", district = "", act = "" } = await searchParams;
+  const { q = "", district = "", act = "", pincode = "" } = await searchParams;
   const t = await getTranslations("Offices");
   const tc = await getTranslations("Common");
   const ta = await getTranslations("Acts");
   const supabase = await createClient();
 
   const { data: districts } = await supabase.from("districts").select("*").order("name");
+  // All five arguments are named, because two overloads of search_offices
+  // exist and a partial call is ambiguous between them.
   const { data: offices, error } = await supabase.rpc("search_offices", {
     p_query: q || null,
     p_district: district || null,
     p_act: act || null,
+    p_police_station: null,
+    // Deliberately not filtered on the citizen's own PIN. "Near me" resolves a
+    // location to a PIN and a district, but search_offices ANDs its arguments,
+    // and a citizen's home PIN is almost never an office's: filtering on both
+    // returned nothing for Kolkata, where the district in fact holds 65
+    // offices. So the district selects, and the PIN only orders -- an office
+    // sharing the citizen's PIN is shown first, and the rest still appear.
+    p_pincode: null,
   });
 
-  const list = (offices ?? []) as Office[];
+  const near = /^\d{6}$/.test(pincode) ? pincode : null;
+  const list = ((offices ?? []) as Office[]).slice().sort((a, b) => {
+    if (!near) return 0;
+    return Number(b.pincode === near) - Number(a.pincode === near);
+  });
   const { data: ratings } = await supabase.from("office_ratings").select("office_id, rating").in("office_id", list.map((o) => o.id));
   const ratingFor = (id: string) => {
     const values = (ratings ?? []).filter((r) => r.office_id === id).map((r) => r.rating);
     return { count: values.length, average: values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0 };
   };
-  // The directory carries a Bengali name for each district, so a reader on the
-  // Bengali site sees the district in the script the rest of the page is in.
+  // District names stay in English on both sites.
+  //
+  // Finding an office is matched in English and by PIN — those are the two
+  // things the register is written in. Showing a Bengali reader "কলকাতা" while
+  // the search only answers to "Kolkata" teaches them a name that does not
+  // work when they type it into the assistant or the search box beside this.
+  // One name, the register's own, is the honest thing to show.
   const districtName = (code: string) => {
     const d = (districts as District[] | null)?.find((x) => x.code === code);
-    if (!d) return code;
-    return (locale === "bn" ? d.name_bn : null) ?? d.name;
+    return d?.name ?? code;
   };
 
   return (
@@ -50,7 +69,12 @@ export default async function OfficesPage({
       title={t("title")}
       lede={t("lede")}
     >
-      <form className="mt-10 grid gap-4 border border-rule bg-surface p-5 md:grid-cols-[1fr_220px_220px_auto]">
+      <div className="mt-10 md:max-w-xs">
+        <NearMeButton locale={locale} />
+      </div>
+
+      <form className="mt-4 grid gap-4 border border-rule bg-surface p-5 md:grid-cols-[1fr_220px_220px_auto]">
+        {pincode && <input type="hidden" name="pincode" value={pincode} />}
         <label className="text-sm font-bold">
           {t("searchLabel")}
           <input

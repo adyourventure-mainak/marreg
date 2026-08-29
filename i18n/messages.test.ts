@@ -22,6 +22,26 @@ const enPaths = paths(en as Tree);
 const bnPaths = paths(bn as Tree);
 
 /**
+ * Keys that are English on the Bengali site on purpose.
+ *
+ * Finding an office is matched in English and by PIN, because that is what the
+ * office register is written in. A Bengali label on this control would name
+ * places in a script the search cannot answer to, so the control speaks the
+ * language of the data behind it.
+ *
+ * Listed one key at a time rather than by prefix: the exemption should have to
+ * be argued for each string, so the next untranslated value fails the way it
+ * should instead of slipping under a wildcard.
+ */
+export const DELIBERATELY_ENGLISH = new Set([
+  "Offices.nearMe",
+  "Offices.nearMeLocating",
+  "Offices.nearMeError.denied",
+  "Offices.nearMeError.out-of-area",
+  "Offices.nearMeError.unavailable",
+]);
+
+/**
  * A missing key does not fail a build — next-intl renders the key path, and a
  * key that exists but was never translated renders English on a Bengali page.
  * Neither shows up in a smoke test, so both are asserted here.
@@ -46,14 +66,29 @@ describe("the two locales carry the same messages", () => {
     // Proper nouns and codes legitimately match; anything longer is a string
     // that was copied across and never translated.
     const untranslated = enPaths.filter((p) => {
+      if (DELIBERATELY_ENGLISH.has(p)) return false;
       const e = leaf(en as Tree, p);
       return e.length > 24 && leaf(bn as Tree, p) === e;
     });
     expect(untranslated).toEqual([]);
   });
 
+  it("keeps every exemption pointing at a key that still exists", () => {
+    // An exemption for a deleted key would silently excuse nothing, and would
+    // outlive the reason it was granted.
+    expect([...DELIBERATELY_ENGLISH].filter((p) => !bnPaths.includes(p))).toEqual([]);
+  });
+
+  it("holds the location control to English on both sides", () => {
+    // The point of the exemption, asserted rather than assumed.
+    for (const p of DELIBERATELY_ENGLISH) {
+      expect(leaf(bn as Tree, p), p).toBe(leaf(en as Tree, p));
+    }
+  });
+
   it("writes Bengali in Bengali script", () => {
     const notBengali = bnPaths.filter((p) => {
+      if (DELIBERATELY_ENGLISH.has(p)) return false;
       const v = leaf(bn as Tree, p);
       return v.length > 24 && !/\p{Script=Bengali}/u.test(v);
     });

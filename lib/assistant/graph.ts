@@ -19,7 +19,7 @@ const graph = new StateGraph(AssistantState)
     passages: await retrieve(state.supabase, state.question, state.act, state.locale),
   }))
   .addNode("compose", async (state) => ({
-    answer: await compose(state.question, state.passages, liveProvider),
+    answer: await compose(state.question, state.passages, liveProvider, state.locale),
   }))
   .addEdge(START, "retrieve")
   .addEdge("retrieve", "compose")

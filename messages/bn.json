@@ -20,7 +20,8 @@
     "supportLabel": "নাগরিক সহায়তা",
     "supportHeading": "আরজিএম দপ্তরে যোগাযোগ করুন",
     "copyright": "© পশ্চিমবঙ্গ সরকার · এনআইসি",
-    "home": "হোম"
+    "home": "হোম",
+    "demo": "মৈনাক সিনহা নির্মিত একটি ডেমো বিবাহ নিবন্ধন অ্যাপ্লিকেশন সাইট।"
   },
   "Home": {
     "eyebrow": "রেজিস্ট্রার জেনারেল অফ ম্যারেজেস দপ্তর",
@@ -196,7 +197,14 @@
     "clearFilters": "ফিল্টার সরান",
     "resultCount": "{count}টি দপ্তর পাওয়া গেছে",
     "policeStation": "থানা {name}",
-    "applyToOffice": "এই দপ্তরে আবেদন করুন"
+    "applyToOffice": "এই দপ্তরে আবেদন করুন",
+    "nearMe": "Find offices near me",
+    "nearMeLocating": "Finding your location…",
+    "nearMeError": {
+      "denied": "Location permission was declined. Choose your district below instead — it is the same search.",
+      "out-of-area": "This service covers West Bengal. We could not place you inside it, so please choose your district below.",
+      "unavailable": "We could not determine your location just now. Choose your district below instead."
+    }
   },
   "Help": {
     "eyebrow": "সহায়তা কেন্দ্র",

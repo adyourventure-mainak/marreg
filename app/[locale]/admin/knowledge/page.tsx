@@ -32,7 +32,7 @@ type Source = {
   knowledge_chunks: { count: number }[];
 };
 
-type Sample = { source_id: string; heading: string | null; body: string; page: number | null };
+type Sample = { source_id: string; seq: number; heading: string | null; body: string; page: number | null };
 
 const TONE: Record<string, string> = {
   PENDING_REVIEW: "text-saffron",
@@ -63,11 +63,15 @@ export default async function AdminKnowledgePage({ params }: { params: Promise<{
     .order("title");
   const sources = (sourceData ?? []) as unknown as Source[];
 
+  // Every chunk, not a sample. A reviewer verifying a source is making its
+  // whole text public, so the whole text has to be reachable on this page --
+  // the Christian and Parsi Acts carry 86 sections between them, and approving
+  // those off the first three would be a rubber stamp, not a review.
   const { data: sampleData } = await supabase
     .from("knowledge_chunks")
-    .select("source_id, heading, body, page")
-    .order("seq")
-    .limit(400);
+    .select("source_id, seq, heading, body, page")
+    .order("source_id")
+    .order("seq");
   const samples = (sampleData ?? []) as Sample[];
 
   return (
@@ -82,7 +86,9 @@ export default async function AdminKnowledgePage({ params }: { params: Promise<{
       {sources.length ? (
         <div className="mt-10 grid gap-4">
           {sources.map((s) => {
-            const preview = samples.filter((c) => c.source_id === s.id).slice(0, 3);
+            const all = samples.filter((c) => c.source_id === s.id);
+            const preview = all.slice(0, 3);
+            const rest = all.slice(3);
             const chunks = s.knowledge_chunks?.[0]?.count ?? 0;
 
             return (
@@ -115,6 +121,21 @@ export default async function AdminKnowledgePage({ params }: { params: Promise<{
                         </p>
                       </div>
                     ))}
+                    {rest.length > 0 && (
+                      <details className="mt-4">
+                        <summary className="focus cursor-pointer text-xs font-bold uppercase tracking-widest text-teal">
+                          Read the remaining {rest.length} section{rest.length === 1 ? "" : "s"}
+                        </summary>
+                        {rest.map((c) => (
+                          <div key={c.seq} className="mt-3">
+                            <p className="text-xs font-bold uppercase tracking-widest text-teal">
+                              {c.heading ?? "Extract"}{c.page ? ` \u00b7 page ${c.page}` : ""}
+                            </p>
+                            <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[var(--muted)]">{c.body}</p>
+                          </div>
+                        ))}
+                      </details>
+                    )}
                   </div>
                 )}
 

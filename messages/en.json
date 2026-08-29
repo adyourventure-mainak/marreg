@@ -20,7 +20,8 @@
     "supportLabel": "Citizen support",
     "supportHeading": "Contact the RGM office",
     "copyright": "© Government of West Bengal · NIC",
-    "home": "Home"
+    "home": "Home",
+    "demo": "A demo marriage registration application site by Mainak Sinha."
   },
   "Home": {
     "eyebrow": "Office of the Registrar General of Marriages",
@@ -196,7 +197,14 @@
     "clearFilters": "Clear filters",
     "resultCount": "{count, plural, =1 {# office found} other {# offices found}}",
     "policeStation": "PS {name}",
-    "applyToOffice": "Apply to this office"
+    "applyToOffice": "Apply to this office",
+    "nearMe": "Find offices near me",
+    "nearMeLocating": "Finding your location…",
+    "nearMeError": {
+      "denied": "Location permission was declined. Choose your district below instead — it is the same search.",
+      "out-of-area": "This service covers West Bengal. We could not place you inside it, so please choose your district below.",
+      "unavailable": "We could not determine your location just now. Choose your district below instead."
+    }
   },
   "Help": {
     "eyebrow": "Help centre",

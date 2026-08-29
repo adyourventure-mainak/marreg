@@ -199,7 +199,7 @@ export default async function OfficerFilePage({ params }: { params: Promise<{ lo
           </aside>
         </div>
       </main>
-      <Footer />
+      <Footer locale={locale} />
     </>
   );
 }
