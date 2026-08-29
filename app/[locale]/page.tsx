@@ -68,9 +68,6 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           <div className="absolute bottom-10 left-10 right-10 border-b-2 border-ink pb-3 font-display text-2xl italic">
             {t("ledgerCaption")}
           </div>
-          <div className="absolute bottom-4 right-10 text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">
-            {t("ledgerStamp")}
-          </div>
         </div>
       </section>
 

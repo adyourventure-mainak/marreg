@@ -31,12 +31,10 @@ export async function Header({ locale = "en" }: { locale?: string }) {
         <nav className="page flex items-center justify-between gap-5 py-4">
           <Link href={`/${locale}`} className="focus flex shrink-0 items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-sm bg-marreg-pink font-display text-xl text-white">M</span>
-            <span>
-              <span className="block font-display text-2xl font-bold">MARREG</span>
-              <span className="hidden text-[10px] font-bold uppercase tracking-widest text-[var(--muted)] sm:block">
-                {t("organisation")}
-              </span>
-            </span>
+            {/* The "Registrar General of Marriages" subtitle is gone: a
+                proposal build should not wear the name of the office it is
+                proposed to. MARREG stands on its own. */}
+            <span className="block font-display text-2xl font-bold">MARREG</span>
           </Link>
 
           <div className="hidden items-center gap-6 text-sm font-semibold lg:flex">
