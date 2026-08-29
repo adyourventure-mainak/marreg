@@ -37,6 +37,24 @@ Style: plain English a person without a lawyer can follow. Short paragraphs. No 
 
 Close with one line telling the person that this is general information and that only the Marriage Officer can decide their case.`;
 
+/**
+ * The language rule, appended per request.
+ *
+ * Nothing in the system prompt used to name a language, so a Bengali question
+ * was answered in Bengali only because the model chose to follow the question
+ * -- reliable enough in testing to look correct, and not a property anyone had
+ * asked for. On the Bengali site that is the difference between a service and a
+ * coin toss, so the locale the citizen is actually reading is stated outright.
+ *
+ * The passages stay English whatever this says: they are the statute, quoted,
+ * and translating them here would put words in the draftsman's mouth. So the
+ * instruction is to explain in Bengali and quote in English.
+ */
+const LANGUAGE: Record<string, string> = {
+  en: "Write your answer in English.",
+  bn: "Write your answer in Bengali (বাংলা). The passages are in English because that is the language the Acts are published in: explain them in Bengali, but when you quote the statute's exact words, quote them in English and leave them unaltered. Keep the names of Acts, offices and officers exactly as the passages spell them.",
+};
+
 /** Shown when there is nothing approved to answer from. Deliberately not model output. */
 /**
  * The assistant is reachable but its model is not answering.
@@ -166,12 +184,14 @@ export async function compose(
   question: string,
   passages: Passage[],
   deps: ComposeDeps,
+  locale = "en",
 ): Promise<AssistantAnswer> {
   if (passages.length === 0) {
     return { answered: false, text: "", passages: [], refusal: NO_SOURCE };
   }
 
-  const text = (await deps.complete(SYSTEM, prompt(question, passages))).trim();
+  const system = `${SYSTEM}\n\n${LANGUAGE[locale] ?? LANGUAGE.en}`;
+  const text = (await deps.complete(system, prompt(question, passages))).trim();
 
   if (!text) {
     return { answered: false, text: "", passages, refusal: NO_SOURCE };

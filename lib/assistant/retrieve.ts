@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActCode } from "../acts";
 import type { Passage } from "./types";
 import { searchOfficialSources } from "./online";
+import { bridgeBengali, hasBengali } from "./glossary";
+import { matchFaq } from "./faq";
 
 /**
  * Everything the assistant is allowed to know.
@@ -54,7 +56,12 @@ const NOISE = new Set([
  * terms that actually discriminate between sections.
  */
 export function searchTerms(question: string): string {
-  const words = question
+  // The corpus is English. A Bengali question matches nothing in it, so the
+  // statute's own words are substituted before the query is built -- see
+  // glossary.ts. English questions pass through this untouched.
+  const source = hasBengali(question) ? bridgeBengali(question) : question;
+
+  const words = source
     .toLowerCase()
     // \p{M} keeps combining marks. Bengali writes its vowels as marks on the
     // consonant, so dropping them does not tidy a word, it shatters it:
@@ -127,14 +134,53 @@ export async function retrieve(
 
   const passages: Passage[] = [];
 
-  const { data: law, error: lawError } = await supabase.rpc("search_knowledge", {
-    p_query: terms,
-    p_act: act,
-    p_limit: 6,
-  });
-  if (lawError) throw new Error(`search_knowledge failed: ${lawError.message}`);
+  // The common questions go straight to the sections that answer them, rather
+  // than depending on rank to put them first -- see faq.ts. This reads through
+  // the same RLS-guarded tables, so an entry naming a section from a source no
+  // human has verified retrieves nothing, exactly as a search would.
+  const faq = matchFaq(question, act);
+  let law: KnowledgeRow[] | null = null;
 
-  for (const row of (law ?? []) as KnowledgeRow[]) {
+  if (faq) {
+    const { data, error } = await supabase
+      .from("knowledge_chunks")
+      .select("id, source_id, heading, body, page, knowledge_sources!inner(id, title, citation, acts)")
+      .in("heading", faq.sections);
+    if (error) throw new Error(`faq lookup failed: ${error.message}`);
+
+    const rows = (data ?? []) as unknown as (Omit<KnowledgeRow, "chunk_id" | "title" | "citation" | "acts"> & {
+      id: string;
+      knowledge_sources: { id: string; title: string; citation: string; acts: ActCode[] | null };
+    })[];
+
+    // Keep the curated order, so the section that answers the question leads.
+    const rank = new Map(faq.sections.map((h, i) => [h.toLowerCase(), i]));
+    law = rows
+      .sort((a, b) => (rank.get((a.heading ?? "").toLowerCase()) ?? 99) - (rank.get((b.heading ?? "").toLowerCase()) ?? 99))
+      .map((r) => ({
+        chunk_id: r.id,
+        source_id: r.knowledge_sources.id,
+        title: r.knowledge_sources.title,
+        citation: r.knowledge_sources.citation,
+        acts: r.knowledge_sources.acts,
+        heading: r.heading,
+        body: r.body,
+        page: r.page,
+      }));
+  }
+
+  // No curated entry, or one whose sources are not public yet: search as usual.
+  if (!law || law.length === 0) {
+    const { data, error: lawError } = await supabase.rpc("search_knowledge", {
+      p_query: terms,
+      p_act: act,
+      p_limit: 6,
+    });
+    if (lawError) throw new Error(`search_knowledge failed: ${lawError.message}`);
+    law = (data ?? []) as KnowledgeRow[];
+  }
+
+  for (const row of law) {
     passages.push({
       index: passages.length + 1,
       kind: "ACT",
