@@ -35,7 +35,10 @@ async function run(req: Request) {
   }
 
   const url = new URL(req.url);
-  const limit = Number(url.searchParams.get("limit") ?? 5);
+  const requestedLimit = Number(url.searchParams.get("limit") ?? 5);
+  // Keep operator mistakes and authenticated endpoint abuse from creating an
+  // oversized model batch or exhausting the function timeout.
+  const limit = Number.isFinite(requestedLimit) ? Math.min(10, Math.max(1, Math.floor(requestedLimit))) : 5;
   const supabase = createServiceClient();
 
   const deps: ExtractionDeps = {
