@@ -89,7 +89,6 @@ export async function Footer({ locale = "en" }: { locale?: string }) {
           <div className="text-xs font-bold uppercase tracking-widest text-white/80">{t("supportLabel")}</div>
           <div className="mt-2 font-display text-2xl">{t("supportHeading")}</div>
         </div>
-        <div className="text-xs uppercase tracking-widest text-white/70">{t("copyright")}</div>
       </div>
 
       {/*
